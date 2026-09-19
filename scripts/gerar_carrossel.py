@@ -8,6 +8,7 @@ import sys
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
 import executar_flow as flow
+from pipeline_config import load_config
 from preparar_insumos import ROOT, Invalid, Workbook, digest, norm, now, require, signature
 
 WIDTH, HEIGHT = 1080, 1920
@@ -137,7 +138,7 @@ def carousel_frame(clip, row, state):
     return frame
 
 
-def generate(clip, sheet):
+def generate(clip, sheet, delivery_dir=None):
     carousel = clip["plan"].get("carrossel")
     require(
         isinstance(carousel, dict) and carousel.get("ativo") is True,
@@ -162,9 +163,9 @@ def generate(clip, sheet):
         "carrossel": carousel
     })[:12]
 
+    delivery_dir = Path(delivery_dir).resolve() if delivery_dir else ROOT / "entregas_flow"
     destination = (
-        ROOT
-        / "entregas_flow"
+        delivery_dir
         / "carrossel"
         / clip["plan"]["producao_id"]
         / f"{clip['plan']['id_clipe']}_carrossel_{token}.png"
@@ -202,10 +203,16 @@ def generate(clip, sheet):
 
 
 def main():
+    try:
+        config = load_config(ROOT)
+    except (OSError, ValueError) as exc:
+        print(f'Erro de configuracao: {exc}', file=sys.stderr)
+        return 2
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--producao", required=True, type=Path)
     parser.add_argument("--clipe")
-    parser.add_argument("--planilha", type=Path, default=ROOT / "entradas/controle_pipeline_flow.xlsx")
+    parser.add_argument("--planilha", type=Path, default=config.spreadsheet)
+    parser.add_argument("--entregas", type=Path, default=config.delivery_dir)
     args = parser.parse_args()
     try:
         clips = flow.load_clips(args.producao)
@@ -214,7 +221,7 @@ def main():
         require(bool(clips), "Nenhum clipe selecionado.")
         for clip in clips:
             if isinstance(clip["plan"].get("carrossel"), dict) and clip["plan"]["carrossel"].get("ativo"):
-                print(generate(clip, args.planilha))
+                print(generate(clip, args.planilha, args.entregas))
         return 0
     except (Invalid, OSError, ValueError, KeyError) as exc:
         print(f"Erro: {exc}", file=sys.stderr)

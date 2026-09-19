@@ -8,6 +8,7 @@ import subprocess
 import sys
 import uuid
 from preparar_insumos import ROOT, Workbook, Invalid, digest, inside, norm, now, read_json, require, safe_id, signature, write_json
+from pipeline_config import VIDEO_MODELS, load_config
 
 
 def atomic(path, value):
@@ -16,13 +17,13 @@ def atomic(path, value):
     os.replace(temporary, path)
 
 
-def export_delivery(clip, stage, record):
+def export_delivery(clip, stage, record, delivery_dir=None):
     if stage == 'imagem' and record.get('modelo') == 'fornecida_pelo_usuario':
         return None
     if stage == 'video' and record.get('status') == 'reutilizado':
         return None
     source = media(record).resolve()
-    delivery_dir = ROOT / 'entregas_flow'
+    delivery_dir = Path(delivery_dir).resolve() if delivery_dir else ROOT / 'entregas_flow'
     index_path = delivery_dir / 'indice_entregas.json'
     delivery_dir.mkdir(parents=True, exist_ok=True)
     entries = read_json(index_path) if index_path.exists() else []
@@ -113,10 +114,10 @@ def row_for(wb, clip):
     return row
 
 
-def sync(sheet, clip, state):
+def sync(sheet, clip, state, delivery_dir=None):
     for stage in ('imagem', 'video'):
         if state.get(stage):
-            export_delivery(clip, stage, state[stage])
+            export_delivery(clip, stage, state[stage], delivery_dir)
     wb = Workbook(sheet)
     row = row_for(wb, clip)
     fields = {'atualizado_em': now(), 'erro': ''}
@@ -175,7 +176,7 @@ def execute(clip, args):
             state.pop('aprovacao', None)
             state.setdefault('historico', []).append({'etapa': 'registrar-imagem', 'inicio': now(), 'origem': str(source), 'diretorio': str(run_dir)})
             atomic(folder / 'execucao.json', state)
-            sync(args.planilha, clip, state)
+            sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
             return 'imagem fornecida registrada; revisar e vincular nova aprovacao'
         if stage == 'aprovar':
             frame = media(state['imagem']) if state.get('imagem') else existing(clip, 'frame_existente_ref_id')
@@ -185,7 +186,7 @@ def execute(clip, args):
             return 'aprovacao vinculada ao frame'
         if state.get(stage):
             media(state[stage])
-            sync(args.planilha, clip, state)
+            sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
             return 'ja concluido; Excel sincronizado'
         require(not state.get('tentativa'), 'Tentativa sem conclusao confirmada. Confira execucao.json, log e Flow antes de repetir.')
         if not pipe['gerar_' + stage]:
@@ -195,7 +196,7 @@ def execute(clip, args):
                 require(asset.suffix.lower() in {'.mp4', '.mov', '.webm', '.mkv'}, 'Ativo final nao e video.')
                 state['video'] = {'arquivo': str(asset), 'sha256': digest(asset), 'status': 'reutilizado'}
                 atomic(folder / 'execucao.json', state)
-                sync(args.planilha, clip, state)
+                sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
                 return 'ativo reutilizado'
             return 'etapa nao solicitada'
         frame = None
@@ -228,27 +229,34 @@ def execute(clip, args):
         state[stage] = {'arquivo': str(candidates[0]), 'sha256': digest(candidates[0]), 'modelo': model, 'em': now()}
         state.setdefault('historico', []).append(state.pop('tentativa'))
         atomic(folder / 'execucao.json', state)
-        sync(args.planilha, clip, state)
+        sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
         return 'gerado; revisar resultado visualmente'
     finally:
         lock.unlink()
 
 
 def main():
+    try:
+        config = load_config(ROOT)
+    except (OSError, ValueError) as exc:
+        print(f'Erro de configuracao: {exc}', file=sys.stderr)
+        return 2
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('acao', choices=['listar', 'imagem', 'registrar-imagem', 'aprovar', 'video'])
     parser.add_argument('--producao', required=True, type=Path)
     parser.add_argument('--clipe')
     parser.add_argument('--arquivo', type=Path, help='Imagem fornecida pelo usuario para registrar no clipe.')
-    parser.add_argument('--planilha', type=Path, default=ROOT / 'entradas/controle_pipeline_flow.xlsx')
-    parser.add_argument('--gflow-raiz', type=Path, default=ROOT.parent / 'gflow-videos')
-    parser.add_argument('--projeto', default=os.environ.get('GFLOW_CLI_DEFAULT_PROJECT', ''))
-    parser.add_argument('--modelo-video', default='veo-fast', choices=['veo-fast', 'veo-lite', 'veo-quality', 'omni-flash', 'veo-lite-lp'])
-    parser.add_argument('--timeout', type=int, default=1800)
+    parser.add_argument('--planilha', type=Path, default=config.spreadsheet)
+    parser.add_argument('--gflow-raiz', type=Path, default=config.gflow_root)
+    parser.add_argument('--projeto', default=config.project_id)
+    parser.add_argument('--modelo-video', default=config.video_model, choices=VIDEO_MODELS)
+    parser.add_argument('--timeout', type=int, default=config.timeout_seconds)
+    parser.add_argument('--entregas', dest='delivery_dir', type=Path, default=config.delivery_dir)
     args = parser.parse_args()
     if args.acao == 'registrar-imagem' and (not args.clipe or args.arquivo is None):
         parser.error('registrar-imagem exige --clipe ID_DO_CLIPE e --arquivo CAMINHO_DA_IMAGEM')
     args.gflow_raiz = args.gflow_raiz.resolve()
+    args.delivery_dir = args.delivery_dir.resolve()
     try:
         clips = load_clips(args.producao)
         if args.clipe:

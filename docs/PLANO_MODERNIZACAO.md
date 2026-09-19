@@ -1,6 +1,6 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 1 em andamento — fundação Git concluída; configuração centralizada pendente  
+Status: Fase 1 concluída — release local `v0.1.0` auditada
 Última atualização: 2026-09-19  
 Documento de referência para continuidade entre contas e sessões do Codex.
 
@@ -144,9 +144,10 @@ WEB_PORT=8765
 Precedência:
 
 1. argumento explícito da CLI;
-2. variável carregada do `.env`;
-3. padrão seguro;
-4. erro claro se uma configuração obrigatória estiver ausente.
+2. variável do ambiente do processo;
+3. variável carregada do `.env`;
+4. padrão seguro;
+5. erro claro se uma configuração obrigatória estiver ausente.
 
 O comando cotidiano deve se tornar:
 
@@ -294,10 +295,11 @@ configuração e manter os comandos atuais funcionando.
 
 Critério: o pipeline roda sem informar o projeto a cada comando.
 
-Status parcial: Git, política de ignore, atributos de arquivos, documentação
-inicial, exemplos sanitizados e linha de base local estão concluídos. Permanecem
-pendentes a configuração centralizada por `.env`, seus testes de compatibilidade
-e a confirmação do critério da fase.
+Status: concluída. Git, política de ignore, atributos de arquivos, documentação
+inicial, exemplos sanitizados, linha de base local, configuração centralizada
+por `.env` e testes de compatibilidade estão concluídos. O comando principal
+aceita o projeto configurado sem exigir `--projeto`, que permanece disponível
+como sobrescrita.
 
 ### Fase 2 — Organização interna
 
@@ -348,16 +350,9 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Continuar a Fase 1 centralizando a configuração por `.env`, com a precedência:
-
-1. argumento explícito da CLI;
-2. variável carregada do `.env`;
-3. padrão seguro;
-4. erro claro quando faltar configuração obrigatória.
-
-Preservar `--projeto` e todos os comandos atuais. Depois, criar testes de
-compatibilidade que não chamem o Flow real. A tag `v0.1.0` só poderá ser criada
-quando o critério da Fase 1 estiver comprovado.
+Iniciar a Fase 2 com gate próprio para criar o pacote `src/pipeline_flow` e
+separar domínio, serviços e adaptadores. A configuração ou publicação em remoto
+permanece uma atividade separada e ainda não foi executada.
 
 Já concluído nesta fase:
 
@@ -365,9 +360,13 @@ Já concluído nesta fase:
 - `.gitignore`, `.env.example`, README, `pyproject.toml` e
   `.gitattributes`;
 - identidade fictícia e planilha-modelo sanitizada e determinística;
-- estabilização da suíte local em 33 testes;
+- estabilização da suíte local em 46 testes;
 - revisão do primeiro índice e exclusão de todo estado operacional;
 - inicialização do Git na branch `main` e primeira linha de base local.
+- carregamento centralizado de `.env` com compatibilidade para os comandos
+  legados e sobrescritas explícitas da CLI.
+- testes de compatibilidade para padrões, `.env`, ambiente, alias legado e
+  sobrescritas das CLIs, sem chamadas ao Flow.
 
 Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
@@ -579,6 +578,86 @@ Atividade concluída sem criar tag ou configurar/publicar remoto.
 Próxima ação: centralizar a configuração por `.env` preservando
 `--projeto` e os comandos legados, seguida de testes de compatibilidade sem
 chamadas ao Flow.
+
+### 2026-09-19 — Configuração centralizada por ambiente
+
+Atividade concluída preservando os comandos atuais e sem executar geração no
+Flow.
+
+- criado `scripts/pipeline_config.py`, com leitura conservadora do `.env`,
+  variáveis do processo, padrões seguros, validação de modelo, timeout e porta;
+- integrados planilha, diretórios de preparados e entregas, raiz do gflow,
+  projeto, modelo e timeout aos quatro comandos operacionais;
+- mantido `GFLOW_CLI_DEFAULT_PROJECT` como compatibilidade e adotado
+  `GFLOW_PROJECT_ID` como nome preferencial;
+- preservados `--projeto` e os demais argumentos como sobrescritas por
+  execução;
+- erros de configuração passaram a produzir mensagem controlada e código de
+  saída 2, sem traceback;
+- atualizados `.env.example` e README para refletir o comportamento atual.
+
+Verificações: 33 testes existentes aprovados, compilação de `scripts/` e
+`tests/`, comandos de ajuda validados anteriormente, três verificações de
+configuração inválida com código de saída 2 e `git diff --check` sem erros.
+Nenhuma chamada ao Flow foi feita.
+
+Pendência e próxima ação: criar testes específicos de compatibilidade para a
+precedência CLI, ambiente, `.env` e padrões, inclusive o alias legado do
+projeto. A Fase 1 e a tag `v0.1.0` permanecem abertas até essa comprovação.
+
+### 2026-09-19 — Testes de compatibilidade e conclusão da Fase 1
+
+Atividade concluída sem acessar a planilha operacional, chamar o Flow, gerar
+mídia ou alterar estados persistidos.
+
+- criado `tests/test_pipeline_config.py` com 13 casos novos;
+- comprovados padrões seguros, caminhos relativos à raiz, carregamento do
+  `.env`, precedência do ambiente e validação de modelo, timeout e porta;
+- comprovada a preferência de `GFLOW_PROJECT_ID` e a compatibilidade de
+  `GFLOW_CLI_DEFAULT_PROJECT` e `GFLOW_CLI_HOME`;
+- comprovado que o comando principal recebe o projeto configurado sem
+  `--projeto` e que argumentos explícitos continuam sobrescrevendo a
+  configuração;
+- exercitados com mocks o executor, o preparador e o carrossel, sem executar
+  geração ou escrever em diretórios operacionais;
+- comprovado que configuração inválida retorna código 2 e mensagem controlada,
+  sem traceback.
+
+Verificações: 13 testes novos e 46 testes totais aprovados, compilação de
+`scripts/` e `tests/` concluída e `git diff --check` sem erros. Ruff
+continua declarado, mas não está instalado no ambiente atual.
+
+O critério da Fase 1 foi cumprido: o projeto configurado é usado pelo comando
+principal sem precisar informar `--projeto` a cada execução. A tag `v0.1.0`
+ainda não foi criada.
+
+Pendência e próxima ação: auditar o diff e o índice, criar o commit local da
+Fase 1 e a tag `v0.1.0`, sem configurar nem publicar remoto.
+
+### 2026-09-19 — Auditoria e release local `v0.1.0`
+
+Atividade concluída sem configurar remoto, publicar código ou executar o Flow.
+
+- auditados os nove arquivos da configuração centralizada, documentação e
+  testes;
+- índice preparado por lista explícita, sem `.env`, planilha operacional,
+  mídias, preparados, entregas ou outros arquivos ignorados;
+- busca no índice não encontrou padrões comuns de segredos ou chaves privadas;
+- corrigida durante a auditoria a herança do diretório de respostas quando
+  `--saida` é informado sem `--respostas`;
+- identidade Git local do repositório corrigida sem registrar seus valores
+  neste documento;
+- commit local criado com a mensagem
+  `feat: centralize pipeline configuration`;
+- tag anotada `v0.1.0` criada sobre o commit da Fase 1.
+
+Verificações finais: 46 testes aprovados, compilação de `scripts/` e
+`tests/`, `git diff --cached --check` sem erros e conferência de que não há
+remoto configurado. Ruff não foi executado porque não está instalado.
+
+Próxima ação: iniciar a Fase 2 com gate `medium`, criando
+`src/pipeline_flow` e separando domínio, serviços e adaptadores. Qualquer
+configuração ou publicação no GitHub exige atividade e autorização próprias.
 
 Nenhuma fase deve ser marcada como concluída sem testes e sem atualização deste
 registro.

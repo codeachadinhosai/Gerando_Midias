@@ -35,12 +35,14 @@ python -m pip install -e .[dev]
 Copy-Item .env.example .env
 ```
 
-O carregamento automático de `.env` ainda será implementado na Fase 1. No
-estado atual, informe o projeto pela opção `--projeto` ou pela variável do
-processo:
+Os scripts carregam automaticamente o `.env` da raiz. Preencha
+`GFLOW_PROJECT_ID` uma vez para não precisar repetir o projeto nos comandos.
+Durante a transição, `GFLOW_CLI_DEFAULT_PROJECT` continua aceito. A precedência
+é: argumento explícito da CLI, variável do processo, valor do `.env` e padrão
+seguro.
 
 ```powershell
-$env:GFLOW_CLI_DEFAULT_PROJECT = seu-projeto
+GFLOW_PROJECT_ID=seu-projeto
 ```
 
 ## Comandos atuais
@@ -54,8 +56,11 @@ python scripts/preparar_insumos.py preparar
 Executar o pipeline:
 
 ```powershell
-python scripts/rodar_pipeline.py --projeto seu-projeto
+python scripts/rodar_pipeline.py
 ```
+
+`--projeto seu-projeto` continua disponível para sobrescrever a configuração
+em uma execução específica.
 
 Listar ou operar uma produção já preparada:
 

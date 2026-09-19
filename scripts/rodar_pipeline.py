@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
 import re
 import sys
@@ -14,6 +13,7 @@ from types import SimpleNamespace
 
 import executar_flow as flow
 import gerar_carrossel as carousel
+from pipeline_config import VIDEO_MODELS, load_config
 from preparar_insumos import (
     ROOT,
     Invalid,
@@ -53,8 +53,10 @@ def active_destination_for(sheet: Path, production_id: str) -> Path | None:
     return next(iter(destinations)) if len(destinations) == 1 else None
 
 
-def package_for_hash(production_id: str, package_hash: str) -> Path | None:
-    base = ROOT / "preparados" / "pacotes" / production_id
+def package_for_hash(
+    production_id: str, package_hash: str, output_dir: Path | None = None
+) -> Path | None:
+    base = (Path(output_dir).resolve() if output_dir else ROOT / "preparados") / "pacotes" / production_id
     if not base.exists():
         return None
     for candidate in base.iterdir():
@@ -67,12 +69,16 @@ def package_for_hash(production_id: str, package_hash: str) -> Path | None:
     return None
 
 
-def differs_only_in_approval(current_package: Path, active_destination: Path) -> bool:
+def differs_only_in_approval(
+    current_package: Path, active_destination: Path, output_dir: Path | None = None
+) -> bool:
     response_file = active_destination / "resposta_ia.json"
     if not response_file.is_file():
         return False
     response = read_json(response_file)
-    old_package = package_for_hash(response["plano_producao"]["producao_id"], response["pacote_sha256"])
+    old_package = package_for_hash(
+        response["plano_producao"]["producao_id"], response["pacote_sha256"], output_dir
+    )
     if old_package is None:
         return False
     current = read_json(current_package / "manifesto.json")
@@ -88,10 +94,11 @@ def differs_only_in_approval(current_package: Path, active_destination: Path) ->
 
     return current["producao_id"] == old["producao_id"] and comparable(current) == comparable(old)
 
-def imported_destination(response: Path) -> Path:
+def imported_destination(response: Path, output_dir: Path | None = None) -> Path:
     data = read_json(response)
     production_id = data["plano_producao"]["producao_id"]
-    return ROOT / "preparados" / "flow" / production_id / signature(data)[:16]
+    base = Path(output_dir).resolve() if output_dir else ROOT / "preparados"
+    return base / "flow" / production_id / signature(data)[:16]
 
 
 def destination_is_active(sheet: Path, package: Path, destination: Path) -> bool:
@@ -156,6 +163,7 @@ def executor_args(args, action: str, supplied: Path | None = None):
         projeto=args.projeto,
         modelo_video=args.modelo_video,
         timeout=args.timeout,
+        delivery_dir=args.delivery_dir,
     )
 
 
@@ -184,7 +192,7 @@ def run_clip(clip: dict, args) -> list[dict]:
         expected = signature({"imagem": digest(frame), "carrossel": carousel_plan})[:12]
         current = state.get("carrossel", {})
         if expected not in Path(current.get("arquivo", "")).name:
-            output = carousel.generate(clip, args.planilha)
+            output = carousel.generate(clip, args.planilha, args.delivery_dir)
             events.append({"etapa": "carrossel", "resultado": "gerado", "arquivo": str(output)})
         else:
             events.append({"etapa": "carrossel", "resultado": "ja concluido"})
@@ -215,14 +223,15 @@ def run_clip(clip: dict, args) -> list[dict]:
     return events
 
 
-def create_ai_bundle(preparation: dict) -> dict | None:
+def create_ai_bundle(preparation: dict, output_root: Path | None = None) -> dict | None:
     packages = preparation.get("pacotes", [])
     pending = preparation.get("pendencias", [])
 
     if not packages and not pending:
         return None
 
-    output_dir = ROOT / "preparados" / "pacotes_ia"
+    output_root = Path(output_root).resolve() if output_root else ROOT / "preparados"
+    output_dir = output_root / "pacotes_ia"
     history_dir = output_dir / "historico"
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -328,6 +337,11 @@ Nao gerar imagens ou videos durante a classificacao.
 
 def run(args) -> dict:
     report = {
+        "configuracao": {
+            "output_dir": str(args.output_dir),
+            "responses_dir": str(args.respostas),
+            "delivery_dir": str(args.delivery_dir),
+        },
         "preparacao": None,
         "pacote_ia": None,
         "importacoes": [],
@@ -338,15 +352,17 @@ def run(args) -> dict:
     blocked_ids = set()
 
     if not args.sem_preparar:
-        preparation = prepare(ROOT, args.planilha, args.fontes)
+        preparation = prepare(ROOT, args.planilha, args.fontes, output_dir=args.output_dir)
         report["preparacao"] = preparation
-        report["pacote_ia"] = create_ai_bundle(preparation)
+        report["pacote_ia"] = create_ai_bundle(preparation, args.output_dir)
         for item in preparation.get("pacotes", []):
             package = Path(item["pacote"]).resolve()
             response = matching_response(package, args.respostas)
             if response is None:
                 active = active_destination_for(args.planilha, item["producao_id"])
-                if active is not None and differs_only_in_approval(package, active):
+                if active is not None and differs_only_in_approval(
+                    package, active, args.output_dir
+                ):
                     report["importacoes"].append({
                         "producao_id": item["producao_id"],
                         "resultado": "plano importado continua valido; mudou somente a aprovacao",
@@ -354,7 +370,7 @@ def run(args) -> dict:
                     })
                     continue
                 message = classification_message(package)
-                message_dir = ROOT / "preparados" / "mensagens_classificacao"
+                message_dir = args.output_dir / "mensagens_classificacao"
                 message_file = message_dir / (item["producao_id"] + "_" + package.name + ".txt")
                 message_dir.mkdir(parents=True, exist_ok=True)
                 message_file.write_text(message + "\n", encoding="utf-8")
@@ -368,12 +384,14 @@ def run(args) -> dict:
                     "arquivo_mensagem": str(message_file),
                 })
                 continue
-            destination = imported_destination(response)
+            destination = imported_destination(response, args.output_dir)
             if destination_is_active(args.planilha, package, destination):
                 report["importacoes"].append({"producao_id": item["producao_id"], "resultado": "revisao ja importada", "destino": str(destination)})
                 continue
             try:
-                imported = import_response(ROOT, package, response, update_excel=True)
+                imported = import_response(
+                    ROOT, package, response, update_excel=True, output_dir=args.output_dir
+                )
                 report["importacoes"].append({"producao_id": item["producao_id"], **imported})
                 if imported.get("erro_excel"):
                     blocked_ids.add(item["producao_id"])
@@ -396,7 +414,7 @@ def run(args) -> dict:
             except (Invalid, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as exc:
                 report["erros"].append({"producao": str(production), "id_clipe": clip_id, "erro": str(exc)})
 
-    write_json(ROOT / "preparados" / "ultima_execucao_automatica.json", report)
+    write_json(args.output_dir / "ultima_execucao_automatica.json", report)
     return report
 
 def human_next_action(report: dict) -> str:
@@ -550,18 +568,31 @@ def human_next_action(report: dict) -> str:
     return "\n".join(lines)
 
 def main() -> int:
+    try:
+        config = load_config(ROOT)
+    except (OSError, ValueError) as exc:
+        print(json.dumps({'erro': f'configuracao invalida: {exc}'}, ensure_ascii=True), file=sys.stderr)
+        return 2
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--planilha", type=Path, default=ROOT / "entradas" / "controle_pipeline_flow.xlsx")
-    parser.add_argument("--respostas", type=Path, default=ROOT / "preparados" / "respostas_ia")
+    parser.add_argument("--planilha", type=Path, default=config.spreadsheet)
+    parser.add_argument("--saida", dest="output_dir", type=Path, default=config.output_dir)
+    parser.add_argument("--respostas", type=Path)
+    parser.add_argument("--entregas", dest="delivery_dir", type=Path, default=config.delivery_dir)
     parser.add_argument("--fontes", nargs="+", type=Path, default=[ROOT / "entradas", ROOT / "referencia_gflow_original" / "Fila Flow"])
     parser.add_argument("--sem-preparar", action="store_true", help="Executa somente revisoes ja importadas.")
-    parser.add_argument("--gflow-raiz", type=Path, default=ROOT.parent / "gflow-videos")
-    parser.add_argument("--projeto", default=os.environ.get("GFLOW_CLI_DEFAULT_PROJECT", ""))
-    parser.add_argument("--modelo-video", default="veo-fast", choices=["veo-fast", "veo-lite", "veo-quality", "omni-flash", "veo-lite-lp"])
-    parser.add_argument("--timeout", type=int, default=1800)
+    parser.add_argument("--gflow-raiz", type=Path, default=config.gflow_root)
+    parser.add_argument("--projeto", default=config.project_id)
+    parser.add_argument("--modelo-video", default=config.video_model, choices=VIDEO_MODELS)
+    parser.add_argument("--timeout", type=int, default=config.timeout_seconds)
     args = parser.parse_args()
     args.planilha = args.planilha.resolve()
-    args.respostas = args.respostas.resolve()
+    args.output_dir = args.output_dir.resolve()
+    args.respostas = (
+        args.respostas.resolve()
+        if args.respostas is not None
+        else args.output_dir / "respostas_ia"
+    )
+    args.delivery_dir = args.delivery_dir.resolve()
     args.gflow_raiz = args.gflow_raiz.resolve()
     try:
         result = run(args)

@@ -12,6 +12,8 @@ import shutil
 import tempfile
 import unicodedata
 import zipfile
+
+from pipeline_config import load_config
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -293,8 +295,9 @@ def validate_revision_migration(operational):
         require(supplied.is_file() and supplied.suffix.lower() in IMAGE_EXT,
                 "Imagem gerada deve existir em imagem_arquivo para migrar a revisao.")
 
-def prepare(root, sheet, roots):
+def prepare(root, sheet, roots, output_dir=None):
     root, sheet = Path(root), Path(sheet)
+    output_dir = Path(output_dir).resolve() if output_dir else root / "preparados"
     wb = Workbook(sheet)
     groups, errors, seen = {}, [], set()
     for record in wb.records():
@@ -342,7 +345,7 @@ def prepare(root, sheet, roots):
         material = {"items": [{**i, "referencias": {n: {"origem": str(p), "sha256": digest(p)} for n, p in i["referencias"].items()}} for i in items],
                     "globais": {n: digest(p) for n, p in global_refs.items()}, "identidade": identity_hash, "contratos": contract_hashes}
         rev = signature(material)
-        dest = root / "preparados/pacotes" / production / rev[:16]
+        dest = output_dir / "pacotes" / production / rev[:16]
         if not dest.exists():
             dest.parent.mkdir(parents=True, exist_ok=True)
             temp = Path(tempfile.mkdtemp(prefix=".pacote-", dir=dest.parent))
@@ -380,7 +383,7 @@ def prepare(root, sheet, roots):
                     shutil.rmtree(temp)
         outputs.append({"producao_id": production, "pacote": str(dest), "revisao": rev})
     report = {"pacotes": outputs, "pendencias": errors}
-    write_json(root / "preparados/relatorio_preparacao.json", report)
+    write_json(output_dir / "relatorio_preparacao.json", report)
     return report
 
 def text_field(value, field):
@@ -563,8 +566,9 @@ def validate_response(response, manifest, package):
                     and summary.get("papel") == p["papel_na_producao"], "Resumo e plano individual divergem.")
     return plans
 
-def import_response(root, package, response_file, update_excel=False):
+def import_response(root, package, response_file, update_excel=False, output_dir=None):
     root, package = Path(root), Path(package).resolve()
+    output_dir = Path(output_dir).resolve() if output_dir else root / "preparados"
     manifest = read_json(package / "manifesto.json")
     # Integridade dos anexos e contratos da rodada.
     for ref in manifest["inventario"].values():
@@ -584,7 +588,7 @@ def import_response(root, package, response_file, update_excel=False):
     response = read_json(response_file)
     plans = validate_response(response, manifest, package)
     rev = signature(response)
-    dest = root / "preparados/flow" / manifest["producao_id"] / rev[:16]
+    dest = output_dir / "flow" / manifest["producao_id"] / rev[:16]
     if not dest.exists():
         dest.parent.mkdir(parents=True, exist_ok=True)
         temp = Path(tempfile.mkdtemp(prefix=".insumos-", dir=dest.parent))
@@ -672,12 +676,13 @@ def import_response(root, package, response_file, update_excel=False):
         except (Invalid, OSError) as exc:
             excel_error = str(exc)
     result = {"destino":str(dest),"clipes":len(plans),"excel_atualizado":update_excel and not excel_error,"erro_excel":excel_error}
-    write_json(root/"preparados/ultima_importacao.json",result)
+    write_json(output_dir/"ultima_importacao.json",result)
     return result
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raiz",type=Path,default=ROOT)
+    parser.add_argument("--saida",type=Path)
     sub = parser.add_subparsers(dest="command",required=True)
     for name in ("preparar","corrigir-planilha"):
         p=sub.add_parser(name); p.add_argument("--planilha",type=Path)
@@ -688,8 +693,11 @@ def main():
     p.add_argument("--atualizar-excel",action="store_true")
     args=parser.parse_args()
     try:
+        config=load_config(args.raiz)
+        output_dir=(args.saida or config.output_dir).resolve()
+        spreadsheet=config.spreadsheet
         if args.command=="corrigir-planilha":
-            wb=Workbook(args.planilha or args.raiz/"entradas/controle_pipeline_flow.xlsx", allow_legacy=True)
+            wb=Workbook(args.planilha or spreadsheet, allow_legacy=True)
             added=wb.add_carousel_columns()
             removed=wb.fix_validations()
             dropdowns=wb.ensure_carousel_dropdowns()
@@ -700,9 +708,11 @@ def main():
             result={"colunas_adicionadas":added,"listas_suspensas_atualizadas":dropdowns,"ajuda_cta_atualizada":help_updated,"validacoes_corrigidas":removed,"backup":"entradas/backups"}
         elif args.command=="preparar":
             roots=args.fontes or [args.raiz/"entradas",args.raiz/"referencia_gflow_original/Fila Flow"]
-            result=prepare(args.raiz,args.planilha or args.raiz/"entradas/controle_pipeline_flow.xlsx",roots)
+            result=prepare(args.raiz,args.planilha or spreadsheet,roots,output_dir=output_dir)
         else:
-            result=import_response(args.raiz,args.pacote,args.resposta,args.atualizar_excel)
+            result=import_response(
+                args.raiz,args.pacote,args.resposta,args.atualizar_excel,output_dir=output_dir
+            )
         print(json.dumps(result,ensure_ascii=True,indent=2))
         return 2 if result.get("pendencias") or result.get("erro_excel") else 0
     except (Invalid,OSError,ValueError,KeyError,TypeError,zipfile.BadZipFile) as exc:
