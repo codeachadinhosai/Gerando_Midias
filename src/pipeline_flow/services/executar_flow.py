@@ -8,6 +8,8 @@ import subprocess
 import sys
 import uuid
 from pipeline_flow.config import VIDEO_MODELS, load_config
+from pipeline_flow.domain import ImageStatus, PipelineStatus, VideoStatus
+from pipeline_flow.services.operational_log import record_clip_event
 from pipeline_flow.services.preparar_insumos import ROOT, Workbook, Invalid, digest, inside, norm, now, read_json, require, safe_id, signature, write_json
 
 
@@ -122,9 +124,17 @@ def sync(sheet, clip, state, delivery_dir=None):
     row = row_for(wb, clip)
     fields = {'atualizado_em': now(), 'erro': ''}
     if state.get('imagem'):
-        fields.update(imagem_status='gerada', imagem_arquivo=str(media(state['imagem'])), status='aguardando_aprovacao')
+        fields.update(
+            imagem_status=ImageStatus.GENERATED,
+            imagem_arquivo=str(media(state['imagem'])),
+            status=PipelineStatus.WAITING_APPROVAL,
+        )
     if state.get('video'):
-        fields.update(video_status=state['video'].get('status', 'gerado'), video_arquivo=str(media(state['video'])), status='concluido')
+        fields.update(
+            video_status=state['video'].get('status', VideoStatus.GENERATED),
+            video_arquivo=str(media(state['video'])),
+            status=PipelineStatus.COMPLETED,
+        )
     for key, value in fields.items():
         wb.set(row['_linha'], key, value)
     wb.save()
@@ -153,6 +163,28 @@ def command(clip, stage, binary, project, model, output, frame=None):
 def execute(clip, args):
     folder = clip['folder']
     lock = folder / '.execucao.lock'
+    stage = args.acao
+    pipe = clip['plan']['pipeline']
+    started_at = now()
+    event_command = None
+    event_method = {
+        'registrar-imagem': 'fornecida_pelo_usuario',
+        'aprovar': 'vinculo_ao_frame',
+    }.get(stage, str(pipe.get('metodo_' + stage, 'nao_aplicavel')))
+
+    def completed(message):
+        record_clip_event(
+            clip,
+            stage=stage,
+            method=event_method,
+            command=event_command,
+            result=message,
+            error='',
+            started_at=started_at,
+            timestamp=now(),
+        )
+        return message
+
     try:
         fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
@@ -162,7 +194,6 @@ def execute(clip, args):
         state = state_for(clip)
         wb = Workbook(args.planilha)
         row = row_for(wb, clip)
-        stage, pipe = args.acao, clip['plan']['pipeline']
         if stage == 'registrar-imagem':
             source = Path(args.arquivo).resolve()
             require(source.is_file() and source.stat().st_size > 0, 'Imagem fornecida ausente ou vazia.')
@@ -177,28 +208,29 @@ def execute(clip, args):
             state.setdefault('historico', []).append({'etapa': 'registrar-imagem', 'inicio': now(), 'origem': str(source), 'diretorio': str(run_dir)})
             atomic(folder / 'execucao.json', state)
             sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
-            return 'imagem fornecida registrada; revisar e vincular nova aprovacao'
+            return completed('imagem fornecida registrada; revisar e vincular nova aprovacao')
         if stage == 'aprovar':
             frame = media(state['imagem']) if state.get('imagem') else existing(clip, 'frame_existente_ref_id')
             require(norm(row['aprovacao']) == 'aprovada', 'Revise o frame e marque aprovacao=aprovada no Excel.')
             state['aprovacao'] = {'sha256': digest(frame), 'arquivo': str(frame), 'em': now()}
             atomic(folder / 'execucao.json', state)
-            return 'aprovacao vinculada ao frame'
+            return completed('aprovacao vinculada ao frame')
         if state.get(stage):
             media(state[stage])
             sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
-            return 'ja concluido; Excel sincronizado'
+            return completed('ja concluido; Excel sincronizado')
         require(not state.get('tentativa'), 'Tentativa sem conclusao confirmada. Confira execucao.json, log e Flow antes de repetir.')
         if not pipe['gerar_' + stage]:
             if stage == 'video' and pipe['usar_ativo_existente']:
                 require(not clip['plan']['origem_clipe'].get('trecho'), 'Recorte de ativo ainda nao suportado.')
                 asset = existing(clip, 'ativo_existente_ref_id')
                 require(asset.suffix.lower() in {'.mp4', '.mov', '.webm', '.mkv'}, 'Ativo final nao e video.')
-                state['video'] = {'arquivo': str(asset), 'sha256': digest(asset), 'status': 'reutilizado'}
+                event_method = 'reutilizar'
+                state['video'] = {'arquivo': str(asset), 'sha256': digest(asset), 'status': VideoStatus.REUSED}
                 atomic(folder / 'execucao.json', state)
                 sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
-                return 'ativo reutilizado'
-            return 'etapa nao solicitada'
+                return completed('ativo reutilizado')
+            return completed('etapa nao solicitada')
         frame = None
         if stage == 'video':
             if pipe['metodo_video'] == 'i2v' or pipe['aprovacao_necessaria']:
@@ -213,6 +245,7 @@ def execute(clip, args):
         output = run_dir / ('imagem.png' if stage == 'imagem' else 'video.mp4')
         model = 'nano2' if stage == 'imagem' else args.modelo_video
         cmd = command(clip, stage, binary, args.projeto, model, output, frame)
+        event_command = cmd
         run_dir.mkdir(parents=True)
         state['tentativa'] = {'etapa': stage, 'inicio': now(), 'comando': cmd, 'diretorio': str(run_dir)}
         atomic(folder / 'execucao.json', state)
@@ -230,7 +263,22 @@ def execute(clip, args):
         state.setdefault('historico', []).append(state.pop('tentativa'))
         atomic(folder / 'execucao.json', state)
         sync(args.planilha, clip, state, getattr(args, 'delivery_dir', None))
-        return 'gerado; revisar resultado visualmente'
+        return completed('gerado; revisar resultado visualmente')
+    except Exception as exc:
+        try:
+            record_clip_event(
+                clip,
+                stage=stage,
+                method=event_method,
+                command=event_command,
+                result='erro',
+                error=str(exc),
+                started_at=started_at,
+                timestamp=now(),
+            )
+        except OSError as log_error:
+            exc.add_note(f'Falha adicional ao registrar log operacional: {log_error}')
+        raise
     finally:
         lock.unlink()
 

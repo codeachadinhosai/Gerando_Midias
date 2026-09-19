@@ -833,10 +833,16 @@ imagem_status = pendente
 Se não precisa:
 
 ``` text
-imagem_status = não necessária
+imagem_status = nao_necessaria
 ```
 
 A planilha se torna o painel visível do estado real.
+
+Os campos operacionais `status`, `imagem_status`, `video_status` e
+`carrossel_status` usam valores canônicos em `snake_case` ASCII. A leitura
+continua aceitando grafias históricas com espaços ou acentos, mas toda nova
+gravação usa a forma canônica. Essa compatibilidade de leitura não reescreve
+planilhas nem pacotes históricos automaticamente.
 
 ------------------------------------------------------------------------
 
@@ -1540,6 +1546,18 @@ Evitar que a única evidência de erro fique no terminal.
 A planilha recebe a mensagem resumida.
 
 O log pode conter detalhes técnicos.
+
+O executor e o renderizador de carrossel mantêm um histórico append-only em:
+
+``` text
+<pasta_do_clipe>/logs/eventos.jsonl
+```
+
+Cada linha é um objeto JSON independente com `schema_version`,
+`producao_id`, `id_clipe`, `etapa`, `metodo`, `comando`, `resultado`,
+`erro`, `inicio_em` e `timestamp`. IDs de projeto e conteúdos longos do
+comando são redigidos no log estruturado. O `gflow.log` bruto continua sendo
+preservado no diretório da tentativa.
 
 ------------------------------------------------------------------------
 

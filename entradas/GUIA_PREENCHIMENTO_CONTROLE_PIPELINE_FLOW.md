@@ -1199,3 +1199,19 @@ python scripts/gerar_carrossel.py --producao "CAMINHO_DA_PRODUCAO" --clipe ID_DO
 O comando automático `python scripts/rodar_pipeline.py` também gera o card assim que a imagem está aprovada.
 
 As colunas `gerar_carrossel` e `cta_destino` possuem listas suspensas com respostas padronizadas. `cta_palavra` oferece sugestões comuns, mas também aceita uma palavra personalizada digitada diretamente na célula. No card `cta`, campos preenchidos são preservados literalmente; campos vazios são completados pela IA durante a classificação.
+
+## Estados operacionais canônicos
+
+Os campos preenchidos pelo sistema — `status`, `imagem_status`,
+`video_status` e `carrossel_status` — passam a ser gravados em
+`snake_case` ASCII. Exemplos: `aguardando_aprovacao`,
+`nao_necessaria`, `nao_necessario` e `nao_solicitado`.
+
+Planilhas históricas com espaços ou acentos continuam legíveis. A
+compatibilidade é aplicada em memória e não reescreve arquivos históricos.
+Valores desconhecidos são rejeitados com uma mensagem que identifica o campo.
+
+Cada operação de imagem, vídeo, aprovação, registro manual ou carrossel também
+gera uma linha JSON em `<pasta_do_clipe>/logs/eventos.jsonl`. Esse histórico
+registra produção, clipe, etapa, método, resultado, erro e horários; parâmetros
+sensíveis e conteúdos longos do comando não são copiados integralmente.

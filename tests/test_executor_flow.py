@@ -1,5 +1,6 @@
 ﻿import argparse
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -32,6 +33,25 @@ class ExecutorTest(unittest.TestCase):
         with patch.object(flow.subprocess, 'run', side_effect=self.generated) as run:
             flow.execute(self.clip, self.args)
             self.assertEqual(run.call_count, 1)
+
+    def operation_events(self):
+        path = self.folder / 'logs' / 'eventos.jsonl'
+        return [
+            json.loads(line)
+            for line in path.read_text(encoding='utf-8').splitlines()
+            if line.strip()
+        ]
+
+    def test_success_writes_structured_operational_log(self):
+        self.image()
+        event = self.operation_events()[-1]
+        self.assertEqual(event['producao_id'], self.clip['plan']['producao_id'])
+        self.assertEqual(event['id_clipe'], self.clip['plan']['id_clipe'])
+        self.assertEqual(event['etapa'], 'imagem')
+        self.assertEqual(event['metodo'], 'i2i')
+        self.assertEqual(event['erro'], '')
+        self.assertIn('<redigido>', event['comando'])
+        self.assertNotIn('test', event['comando'])
 
     def test_resume_does_not_generate_twice(self):
         self.image()
@@ -93,6 +113,9 @@ class ExecutorTest(unittest.TestCase):
     def test_failed_submission_is_not_retried(self):
         with patch.object(flow.subprocess, 'run', return_value=argparse.Namespace(returncode=1)), self.assertRaises(flow.Invalid):
             flow.execute(self.clip, self.args)
+        event = self.operation_events()[-1]
+        self.assertEqual(event['resultado'], 'erro')
+        self.assertIn('gflow retornou 1', event['erro'])
         with patch.object(flow.subprocess, 'run') as run, self.assertRaises(flow.Invalid):
             flow.execute(self.clip, self.args)
         run.assert_not_called()

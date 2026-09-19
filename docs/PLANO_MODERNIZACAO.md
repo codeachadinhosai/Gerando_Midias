@@ -1,6 +1,6 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 2 concluída e versionada localmente; Fase 3 pendente
+Status: Fase 3 em andamento — estados e logs versionados localmente; hashes e aprovação pendentes
 Última atualização: 2026-09-19  
 Documento de referência para continuidade entre contas e sessões do Codex.
 
@@ -356,10 +356,10 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Iniciar a Fase 3 com gate próprio para normalizar estados e logs. Essa atividade
-deve preservar hashes, aprovações, locks e retomada e não deve migrar dados
-históricos sem um gate específico. A configuração ou publicação em remoto
-permanece uma atividade separada.
+Iniciar com gate próprio o reforço dos hashes e do vínculo de aprovação à
+revisão correta. Locks, retomada, idempotência e migrações históricas permanecem
+atividades posteriores. A configuração ou publicação em remoto continua sendo
+uma atividade separada.
 
 Já concluído nesta fase:
 
@@ -771,6 +771,46 @@ ambiente atual.
 Próxima ação: iniciar a Fase 3, sob gate `high`, pela normalização de estados e
 logs. Hashes e aprovação, locks e retomada, e migrações e testes de recuperação
 permanecem blocos posteriores com gates próprios.
+
+### 2026-09-19 — Normalização de estados e logs da Fase 3
+
+Atividade concluída tecnicamente sem executar o pipeline operacional, chamar o
+Flow, migrar arquivos históricos ou alterar hashes, aprovação, locks e regras
+de retomada.
+
+- criado um vocabulário de estados por campo para `status`,
+  `imagem_status`, `video_status` e `carrossel_status`;
+- adotado `snake_case` ASCII como representação canônica das novas gravações;
+- mantida leitura compatível com valores históricos que usam espaços ou
+  acentos, sem regravação automática;
+- estados desconhecidos passam a produzir erro claro com o nome do campo;
+- criado o evento operacional versionado e o histórico append-only
+  `<pasta_do_clipe>/logs/eventos.jsonl`;
+- integrados ao histórico executor e carrossel, registrando produção, clipe,
+  etapa, método, resultado, erro e horários;
+- IDs de projeto e conteúdos longos do comando são redigidos no log
+  estruturado; o `gflow.log` bruto continua preservado;
+- atualizados arquitetura e guia de preenchimento com o contrato canônico;
+- usado um grafo estrutural temporário do pacote para localizar os pontos
+  centrais de persistência; nenhum artefato do grafo foi criado no repositório.
+- adicionado `/graphify-out/` ao `.gitignore` após a auditoria detectar que
+  conversões temporárias poderiam expor cópias de planilhas operacionais ao
+  índice Git;
+- commit local da normalização de estados e logs criado sem tag ou publicação
+  remota.
+
+Verificações: 58 testes e 3 subtestes aprovados, incluindo compatibilidade de
+grafias legadas, rejeição de estados inválidos, redação de comando e logs de
+sucesso e falha no executor e no carrossel. `git diff --check` não encontrou
+erros. Nenhuma chamada ao Flow foi feita.
+
+Auditoria final: os 13 arquivos previstos foram conferidos, o índice não contém
+estado operacional, mídia, segredo ou artefato do Graphify, e as CLIs nova e
+histórica mantêm as mesmas opções. O Ruff não foi executado porque permanece
+indisponível no ambiente atual.
+
+Próxima ação: iniciar, sob novo gate `high`, o reforço dos hashes e do vínculo
+de aprovação à revisão correta, sem reutilizar automaticamente este gate.
 
 Nenhuma fase deve ser marcada como concluída sem testes e sem atualização deste
 registro.

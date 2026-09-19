@@ -14,6 +14,15 @@ import unicodedata
 import zipfile
 
 from pipeline_flow.config import load_config
+from pipeline_flow.domain import (
+    CarouselStatus,
+    ImageStatus,
+    PipelineStatus,
+    STATE_FIELDS,
+    VideoStatus,
+    normalize_state,
+    normalize_states,
+)
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -149,11 +158,23 @@ class Workbook:
         require(actual == HEADERS or (allow_legacy and self.legacy), f"Cabeçalhos de Controle diferentes do contrato de {len(HEADERS)} colunas. Execute corrigir-planilha.")
 
     def records(self):
-        return [{**{name: cols.get(column_name(i), "").strip() for i, name in enumerate(HEADERS)}, "_linha": index}
-                for index, cols in self.rows.items() if index >= 4 and any(cols.values())]
+        records = [
+            {
+                **{
+                    name: cols.get(column_name(i), '').strip()
+                    for i, name in enumerate(HEADERS)
+                },
+                '_linha': index,
+            }
+            for index, cols in self.rows.items()
+            if index >= 4 and any(cols.values())
+        ]
+        return [normalize_states(record) for record in records]
 
     def set(self, index, field, value):
         require(field in HEADERS[12:] and field != "aprovacao", "Não alterar campo humano.")
+        if field in STATE_FIELDS:
+            value = normalize_state(field, value)
         data = self.tree.find("m:sheetData", NS)
         row = next((r for r in data if int(r.attrib["r"]) == index), None)
         require(row is not None, f"Linha ausente: {index}")
@@ -287,10 +308,12 @@ def human_snapshot(record):
     return {k: record.get(k, "") for k in HUMAN}
 
 def validate_revision_migration(operational):
-    require(operational.get("imagem_status") != "gerando" and
-            operational.get("video_status") not in {"gerado", "gerando", "reutilizado"},
+    image_status = normalize_state('imagem_status', operational.get('imagem_status', ''))
+    video_status = normalize_state('video_status', operational.get('video_status', ''))
+    require(image_status != ImageStatus.GENERATING and
+            video_status not in {VideoStatus.GENERATED, VideoStatus.GENERATING, VideoStatus.REUSED},
             "Linha com ativo em andamento ou video concluido: nao sobrescrever estado com importacao.")
-    if operational.get("imagem_status") == "gerada":
+    if image_status == ImageStatus.GENERATED:
         supplied = Path(operational.get("imagem_arquivo", "")).resolve()
         require(supplied.is_file() and supplied.suffix.lower() in IMAGE_EXT,
                 "Imagem gerada deve existir em imagem_arquivo para migrar a revisao.")
@@ -661,15 +684,15 @@ def import_response(root, package, response_file, update_excel=False, output_dir
                 carousel = p.get("carrossel") if isinstance(p.get("carrossel"), dict) else {}
                 fields.update(texto_carrossel=carousel.get("texto", ""),
                               subtexto_carrossel=carousel.get("subtexto", ""),
-                              carrossel_status="pendente" if carousel.get("ativo") else "não solicitado",
+                              carrossel_status=CarouselStatus.PENDING if carousel.get("ativo") else CarouselStatus.NOT_REQUESTED,
                               carrossel_arquivo="")
                 if p["status"] == "pendente":
-                    fields.update(status="pendente",erro=p["motivo"])
+                    fields.update(status=PipelineStatus.PENDING,erro=p["motivo"])
                 else:
                     validate_revision_migration(current[row])
-                    fields.update(status="classificado",classificacao=p["classificacao"].get("categoria") or "",
+                    fields.update(status=PipelineStatus.CLASSIFIED,classificacao=p["classificacao"].get("categoria") or "",
                                   fluxo=p["classificacao"].get("fluxo") or "",erro="",
-                                  imagem_status="pendente" if p["pipeline"]["gerar_imagem"] else "não necessária")
+                                  imagem_status=ImageStatus.PENDING if p["pipeline"]["gerar_imagem"] else ImageStatus.NOT_REQUIRED)
                 for name,value in fields.items():
                     wb.set(row,name,value)
             wb.save()

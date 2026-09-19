@@ -8,7 +8,9 @@ import sys
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
 from pipeline_flow.config import load_config
+from pipeline_flow.domain import CarouselStatus
 from pipeline_flow.services import executar_flow as flow
+from pipeline_flow.services.operational_log import record_clip_event
 from pipeline_flow.services.preparar_insumos import ROOT, Invalid, Workbook, digest, norm, now, require, signature
 
 WIDTH, HEIGHT = 1080, 1920
@@ -138,7 +140,7 @@ def carousel_frame(clip, row, state):
     return frame
 
 
-def generate(clip, sheet, delivery_dir=None):
+def _generate(clip, sheet, delivery_dir=None):
     carousel = clip["plan"].get("carrossel")
     require(
         isinstance(carousel, dict) and carousel.get("ativo") is True,
@@ -191,7 +193,7 @@ def generate(clip, sheet, delivery_dir=None):
     for field, value in {
         "texto_carrossel": carousel["texto"],
         "subtexto_carrossel": carousel["subtexto"],
-        "carrossel_status": "gerado",
+        "carrossel_status": CarouselStatus.GENERATED,
         "carrossel_arquivo": str(destination),
         "atualizado_em": now(),
         "erro": ""
@@ -199,6 +201,36 @@ def generate(clip, sheet, delivery_dir=None):
         wb.set(row["_linha"], field, value)
 
     wb.save()
+    return destination
+
+
+def generate(clip, sheet, delivery_dir=None):
+    started_at = now()
+    try:
+        destination = _generate(clip, sheet, delivery_dir)
+    except Exception as exc:
+        try:
+            record_clip_event(
+                clip,
+                stage='carrossel',
+                method='renderizacao_local',
+                result='erro',
+                error=str(exc),
+                started_at=started_at,
+                timestamp=now(),
+            )
+        except OSError as log_error:
+            exc.add_note(f'Falha adicional ao registrar log operacional: {log_error}')
+        raise
+    record_clip_event(
+        clip,
+        stage='carrossel',
+        method='renderizacao_local',
+        result='gerado',
+        error='',
+        started_at=started_at,
+        timestamp=now(),
+    )
     return destination
 
 
