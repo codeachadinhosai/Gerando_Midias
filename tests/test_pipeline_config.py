@@ -6,11 +6,10 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-import executar_flow
-import gerar_carrossel
-import pipeline_config
-import preparar_insumos
-import rodar_pipeline
+from pipeline_flow import adapters
+from pipeline_flow import cli as rodar_pipeline
+from pipeline_flow import config as pipeline_config
+from pipeline_flow.services import executar_flow, gerar_carrossel, preparar_insumos
 
 
 class PipelineConfigTest(unittest.TestCase):
@@ -98,11 +97,11 @@ class PipelineConfigTest(unittest.TestCase):
     def test_dotenv_parser_accepts_export_and_quotes_but_rejects_code(self):
         valid = self.write_env('export GFLOW_PROJECT_ID=\'quoted project\'\n')
         self.assertEqual(
-            pipeline_config.read_dotenv(valid)['GFLOW_PROJECT_ID'], 'quoted project'
+            adapters.read_dotenv(valid)['GFLOW_PROJECT_ID'], 'quoted project'
         )
         invalid = self.write_env('not a variable\n')
         with self.assertRaisesRegex(pipeline_config.ConfigError, 'NOME=VALOR'):
-            pipeline_config.read_dotenv(invalid)
+            adapters.read_dotenv(invalid)
 
 
 def fake_config(root):

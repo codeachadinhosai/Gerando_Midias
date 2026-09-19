@@ -1,7 +1,7 @@
 import io
 import unittest
 import xml.etree.ElementTree as ET
-from scripts.preparar_insumos import serialize_sheet
+from pipeline_flow.services.preparar_insumos import serialize_sheet
 
 class NamespaceTest(unittest.TestCase):
     def check(self, source):

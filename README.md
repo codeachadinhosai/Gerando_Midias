@@ -56,11 +56,17 @@ python scripts/preparar_insumos.py preparar
 Executar o pipeline:
 
 ```powershell
-python scripts/rodar_pipeline.py
+python -m pipeline_flow
 ```
 
 `--projeto seu-projeto` continua disponível para sobrescrever a configuração
 em uma execução específica.
+
+O comando histórico permanece compatível durante a modernização:
+
+```powershell
+python scripts/rodar_pipeline.py
+```
 
 Listar ou operar uma produção já preparada:
 

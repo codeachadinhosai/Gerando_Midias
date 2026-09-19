@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts.preparar_insumos import (
+from pipeline_flow.services.preparar_insumos import (
     HEADERS,
     Invalid,
     ROOT,
@@ -43,7 +43,7 @@ class PromptsTest(unittest.TestCase):
     def test_simple_prompt_export_keeps_identity_file(self):
         self.entry['incluir_bloco_identidade'] = False
         rows = self.current_workbook_rows()
-        with tempfile.TemporaryDirectory() as tmp, patch('scripts.preparar_insumos.Workbook') as wb:
+        with tempfile.TemporaryDirectory() as tmp, patch('pipeline_flow.services.preparar_insumos.Workbook') as wb:
             wb.return_value.records.return_value = rows
             response_file = Path(tmp)/'resposta.json'
             write_json(response_file, self.response)
@@ -58,7 +58,7 @@ class PromptsTest(unittest.TestCase):
     def test_import_rejects_change_in_new_human_field(self):
         rows = self.current_workbook_rows()
         rows[0]["gerar_carrossel"] = "sim"
-        with tempfile.TemporaryDirectory() as tmp, patch("scripts.preparar_insumos.Workbook") as wb:
+        with tempfile.TemporaryDirectory() as tmp, patch("pipeline_flow.services.preparar_insumos.Workbook") as wb:
             wb.return_value.records.return_value = rows
             response_file = Path(tmp) / "resposta.json"
             write_json(response_file, self.response)
@@ -136,7 +136,7 @@ class PromptsTest(unittest.TestCase):
     def test_export_and_repeat_preserve_media(self):
         # Snapshot isolates the test from the user's current approval and workbook.
         rows = self.current_workbook_rows()
-        with tempfile.TemporaryDirectory() as tmp, patch('scripts.preparar_insumos.Workbook') as wb:
+        with tempfile.TemporaryDirectory() as tmp, patch('pipeline_flow.services.preparar_insumos.Workbook') as wb:
             wb.return_value.records.return_value = rows
             response_file = Path(tmp)/'resposta.json'
             write_json(response_file, self.response)

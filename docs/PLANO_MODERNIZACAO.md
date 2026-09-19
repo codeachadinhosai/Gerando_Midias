@@ -1,6 +1,6 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 1 concluída — release local `v0.1.0` auditada
+Status: Fase 2 concluída e versionada localmente; Fase 3 pendente
 Última atualização: 2026-09-19  
 Documento de referência para continuidade entre contas e sessões do Codex.
 
@@ -308,6 +308,12 @@ scripts em wrappers e eliminar imports por manipulação de `sys.path`.
 
 Critério: testes passam e a CLI antiga continua compatível.
 
+Status: concluída. O pacote `src/pipeline_flow` contém a fachada pública,
+domínio, serviços, adaptadores, orquestrador e implementações operacionais. Os
+caminhos em `scripts/` são wrappers compatíveis, não há manipulação de
+`sys.path` e a nova CLI `python -m pipeline_flow` foi validada em conjunto
+com os comandos antigos.
+
 ### Fase 3 — Confiabilidade
 
 Normalizar estados e logs; reforçar retomada, hashes, locks e migrações; criar
@@ -350,9 +356,10 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Iniciar a Fase 2 com gate próprio para criar o pacote `src/pipeline_flow` e
-separar domínio, serviços e adaptadores. A configuração ou publicação em remoto
-permanece uma atividade separada e ainda não foi executada.
+Iniciar a Fase 3 com gate próprio para normalizar estados e logs. Essa atividade
+deve preservar hashes, aprovações, locks e retomada e não deve migrar dados
+históricos sem um gate específico. A configuração ou publicação em remoto
+permanece uma atividade separada.
 
 Já concluído nesta fase:
 
@@ -658,6 +665,112 @@ remoto configurado. Ruff não foi executado porque não está instalado.
 Próxima ação: iniciar a Fase 2 com gate `medium`, criando
 `src/pipeline_flow` e separando domínio, serviços e adaptadores. Qualquer
 configuração ou publicação no GitHub exige atividade e autorização próprias.
+
+### 2026-09-19 — Pacote e camadas iniciais da Fase 2
+
+Atividade concluída sem alterar os scripts operacionais, executar o Flow ou
+modificar estados persistidos.
+
+- criado o pacote `src/pipeline_flow` com versão e fachada pública de
+  configuração;
+- criada a camada `domain` com modelo imutável e validações puras;
+- criada a camada `adapters` para ambiente do processo, leitura conservadora
+  de `.env` e resolução de caminhos;
+- criada a camada `services` para aplicar precedência e compor a configuração;
+- configurado o `pyproject.toml` para descobrir pacotes em `src/` e permitir
+  os imports durante os testes;
+- criado `tests/test_package_architecture.py` com quatro testes de fronteira,
+  validação e equivalência com a implementação legada.
+
+Decisão de transição: `scripts/pipeline_config.py` permanece temporariamente
+como implementação usada pelas CLIs atuais. A duplicação evita quebrar a
+execução direta antes da conversão explícita dos scripts em wrappers; ela deve
+ser removida na próxima atividade.
+
+Verificações: descoberta dos quatro pacotes esperados, compilação de `src/`,
+`scripts/` e `tests/`, 50 testes aprovados, ajuda das CLIs principais
+preservada e `git diff --check` sem erros. Ruff continua indisponível no
+ambiente. Nenhuma chamada ao Flow foi feita.
+
+Próxima ação: converter os scripts em wrappers, apontar a configuração para a
+fachada `pipeline_flow.config` e remover a duplicação e eventuais manipulações
+de `sys.path`, preservando todos os comandos atuais.
+
+### 2026-09-19 — Implementações no pacote e wrappers legados
+
+Atividade concluída sem executar o Flow, gerar mídia ou alterar estados
+operacionais.
+
+- movidos preparador, executor, carrossel e gerador do modelo para
+  `pipeline_flow.services`;
+- movido o orquestrador principal para `pipeline_flow.cli`;
+- substituídos os seis módulos em `scripts/` por wrappers que preservam os
+  caminhos e comandos existentes;
+- removida a implementação duplicada de configuração; a fonte canônica passou
+  a ser `pipeline_flow.config`;
+- atualizados os imports internos e os testes para usar módulos canônicos;
+- removida a única manipulação explícita de `sys.path`;
+- ajustado o cálculo de `ROOT` para a profundidade do layout `src/`;
+- instalado o próprio projeto em modo editável no ambiente do usuário, sem
+  dependências e sem isolamento de build.
+
+Verificações: 50 testes aprovados, compilação de `src/`, `scripts/` e
+`tests/`, ausência de imports internos legados, `git diff --check` sem erros
+e execução com código 0 da ajuda dos cinco comandos legados e do wrapper de
+configuração. A instalação editável aponta para este workspace. Nenhuma chamada
+ao Flow foi feita.
+
+Próxima ação: criar `pipeline_flow.__main__` e testes de subprocesso para
+comparar a nova CLI com os comandos antigos, concluindo o critério da Fase 2.
+
+### 2026-09-19 — Nova CLI e conclusão técnica da Fase 2
+
+Atividade concluída sem executar o pipeline operacional ou chamar o Flow.
+
+- criado `pipeline_flow.__main__` para o comando
+  `python -m pipeline_flow`;
+- ajustado o orquestrador para aceitar um nome de programa explícito sem
+  alterar o wrapper legado;
+- criado `tests/test_cli_compatibility.py` com três testes de subprocesso;
+- comparadas as opções apresentadas pelas CLIs nova e antiga;
+- comprovados códigos de saída e mensagens controladas para configuração
+  inválida e argumento desconhecido;
+- atualizado o README para tornar a nova CLI o comando principal e manter
+  documentado o comando histórico.
+
+Verificações: 53 testes aprovados, compilação de `src/`, `scripts/` e
+`tests/`, duas ajudas com código 0, conjunto idêntico de opções, ausência de
+`sys.path` e `git diff --check` sem erros. Nenhuma chamada ao Flow foi feita.
+
+O critério da Fase 2 foi cumprido: os testes passam, a CLI antiga continua
+compatível e a nova CLI está disponível.
+
+Pendência e próxima ação: auditar o diff e o índice da Fase 2 e criar um commit
+local antes de iniciar a normalização de estados e logs da Fase 3.
+
+### 2026-09-19 — Auditoria e commit local da Fase 2
+
+Atividade concluída sem criar tag, configurar remoto, executar o pipeline
+operacional ou chamar o Flow.
+
+- auditados os 27 arquivos da reorganização interna e da compatibilidade das
+  CLIs;
+- removidas linhas em branco excedentes detectadas pela conferência final;
+- confirmado que o índice não contém `.env`, mídias, preparados, entregas ou
+  outros estados operacionais;
+- a busca no índice não encontrou padrões comuns de chaves privadas ou tokens;
+- preservadas a nova CLI `python -m pipeline_flow` e a CLI histórica
+  `python scripts/rodar_pipeline.py` com o mesmo conjunto de opções;
+- commit local da Fase 2 criado sem nova tag e sem publicação remota.
+
+Verificações finais: 53 testes e 3 subtestes aprovados, duas ajudas com código
+0, ausência de manipulação de `sys.path` no código e `git diff --cached --check`
+sem erros. Nenhuma chamada ao Flow foi feita. O Ruff continua indisponível no
+ambiente atual.
+
+Próxima ação: iniciar a Fase 3, sob gate `high`, pela normalização de estados e
+logs. Hashes e aprovação, locks e retomada, e migrações e testes de recuperação
+permanecem blocos posteriores com gates próprios.
 
 Nenhuma fase deve ser marcada como concluída sem testes e sem atualização deste
 registro.

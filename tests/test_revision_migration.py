@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.preparar_insumos import Invalid, validate_revision_migration
+from pipeline_flow.services.preparar_insumos import Invalid, validate_revision_migration
 
 
 class RevisionMigrationTest(unittest.TestCase):
