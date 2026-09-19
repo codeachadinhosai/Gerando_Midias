@@ -1,0 +1,8 @@
+ESTADO: MODELO_NAO_RESOLVIDO
+Não enviar este arquivo como contexto pronto ao gerador.
+
+Use CLASSIFICADOR_UNIVERSAL.txt e as referências do lote para produzir o contexto específico de 06_demonstracao_uso.
+A IA deve preencher todos os campos do contrato incluído no classificador: produto, referências, ambiente, identidade visível, roupa, enquadramento, estado inicial, pegada/ação, cronograma, estado final e áudio.
+Escolher uma única solução, sem lista de opções. Substituir este arquivo apenas na pasta da execução, preservando o modelo desta biblioteca.
+A fala é de desenvolvimento, sem repetir "Bora".
+

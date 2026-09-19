@@ -1,0 +1,34 @@
+IDENTIDADE DE EXEMPLO — PERSONAGEM FICTÍCIA
+
+Este arquivo demonstra a estrutura de uma identidade visual. Substitua os
+campos por informações autorizadas antes de usar o pipeline. Não inclua dados
+pessoais desnecessários, documentos, endereços, contatos ou credenciais.
+
+IDENTITY PRIORITY
+
+- Nome editorial: Apresentadora Exemplo.
+- A personagem é fictícia e não representa uma pessoa real.
+- Use somente referências visuais autorizadas e necessárias para o clipe.
+- Não invente tatuagens, joias, marcas corporais ou características ausentes.
+
+BODY / PROPORTION LOCK
+
+- Preservar proporções coerentes entre rosto, tronco, braços e mãos.
+- Evitar alterações de idade aparente, anatomia ou tom de pele entre clipes.
+- Referências de corpo e mãos só devem ser anexadas quando forem relevantes.
+
+SCENE-DEFINED APPEARANCE AND PERFORMANCE
+
+- Roupa, penteado, pose e expressão são definidos pela cena aprovada.
+- Manter gestos naturais, discretos e compatíveis com a ação.
+- Em POV sem rosto, usar apenas as referências necessárias para as mãos.
+- A fala deve seguir literalmente o campo `fala_exata` do plano.
+
+AVOID
+
+- misturar identidades ou produtos;
+- reconstruir a cena quando o contrato pedir edição da imagem-base;
+- adicionar objetos, logotipos, textos ou acessórios não autorizados;
+- inferir dados pessoais ou comerciais não fornecidos;
+- anexar referências de identidade sem necessidade visual.
+

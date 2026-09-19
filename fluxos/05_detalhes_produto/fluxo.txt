@@ -1,0 +1,19 @@
+FLUXO: 05_detalhes_produto
+CATEGORIA: DetalhesProduto
+FUNÇÃO: principal
+OBJETIVO: Produto em destaque para observar um detalhe visível.
+ENTRADAS: Referência com detalhe suficientemente claro; identidade só se houver mão visível no contexto.
+QUANDO ESCOLHER: Opção preferencial quando faltam evidências para uso funcional. Não inventar detalhe que a foto não mostra.
+QUADRO INICIAL: Produto e detalhe real em foco, com enquadramento próximo mas sem inventar superfícies ou inscrições.
+AÇÃO: Um movimento discreto de câmera OU produto, previamente escolhido no contexto.
+LIMITES: Pessoa opcional e limitada às partes definidas no contexto. Não exigir rosto nem roupas.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+DetalhesProduto.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: DetalhesProduto_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

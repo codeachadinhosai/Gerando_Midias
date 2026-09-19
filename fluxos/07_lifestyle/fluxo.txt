@@ -1,0 +1,19 @@
+FLUXO: 07_lifestyle
+CATEGORIA: Lifestyle
+FUNÇÃO: principal
+OBJETIVO: Produto participa de uma rotina cotidiana.
+ENTRADAS: Produto inequívoco; identidade se Júlia aparecer; contexto de uso plausível.
+QUANDO ESCOLHER: Usar quando uma atividade simples e natural contextualiza o produto, sem precisar explicar mecanismo desconhecido.
+QUADRO INICIAL: Momento anterior à atividade escolhida; produto identificável e integrado ao local.
+AÇÃO: Uma atividade curta e cotidiana, com o produto permanecendo reconhecível.
+LIMITES: Não inventar testemunho, resultado ou experiência pessoal. Cenário não restrito à casa.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+Lifestyle.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: Lifestyle_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

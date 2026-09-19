@@ -1,0 +1,19 @@
+FLUXO: 08_ambientacao
+CATEGORIA: Ambientacao
+FUNÇÃO: principal
+OBJETIVO: Mostra o produto compondo um espaço.
+ENTRADAS: Foto inequívoca do produto; ambiente opcional.
+QUANDO ESCOLHER: Adequado para decoração, organização, móveis e itens cuja relação com o espaço seja relevante.
+QUADRO INICIAL: Produto integrado ao ambiente resolvido, com escala plausível, sem confundir decoração com item divulgado.
+AÇÃO: Um movimento discreto de câmera previamente definido; produto permanece estável.
+LIMITES: Sem pessoa por padrão de seleção do contexto; não inserir Júlia automaticamente.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+Ambientacao.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: Ambientacao_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

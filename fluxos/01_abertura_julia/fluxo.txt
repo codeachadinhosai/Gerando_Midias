@@ -1,0 +1,19 @@
+FLUXO: 01_abertura_julia
+CATEGORIA: AberturaJulia
+FUNÇÃO: abertura
+OBJETIVO: Júlia introduz o conteúdo olhando para a câmera.
+ENTRADAS: Referências de identidade; referência de cena opcional; referências dos produtos que serão mencionados.
+QUANDO ESCOLHER: Usar quando o clipe inicia a sequência. Não escolher como demonstração principal.
+QUADRO INICIAL: Júlia em enquadramento conversacional definido pelo contexto, olhando para a câmera, boca relaxada e mãos em repouso no gesto inicial. Produto somente se o contexto o incluir.
+AÇÃO: Uma fala de abertura, expressão natural e um gesto discreto; terminar em pose calma.
+LIMITES: Rosto e porção do corpo previstos no contexto. Não exigir produto na mão.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+AberturaJulia.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: AberturaJulia_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

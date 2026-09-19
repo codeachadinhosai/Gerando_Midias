@@ -1,0 +1,19 @@
+FLUXO: 04_pov_apresentar
+CATEGORIA: POVApresentar
+FUNÇÃO: principal
+OBJETIVO: Primeira pessoa: produto já na mão ou parte acessível já segurada.
+ENTRADAS: Foto inequívoca do produto; identidade para aparência visível; cena opcional.
+QUANDO ESCOLHER: Adequado para inspeção simples. Item fixo pode permanecer apoiado com a mão sobre parte acessível.
+QUADRO INICIAL: Mão já sustenta ou segura o produto exatamente como decidido no contexto.
+AÇÃO: Um movimento pequeno de apresentação ou inspeção, preservando apoio e pegada.
+LIMITES: Somente mãos e antebraços. Não mostrar outra pessoa de frente. Não revelar verso desconhecido.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+POVApresentar.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: POVApresentar_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

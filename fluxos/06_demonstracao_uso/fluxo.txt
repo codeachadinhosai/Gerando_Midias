@@ -1,0 +1,19 @@
+FLUXO: 06_demonstracao_uso
+CATEGORIA: DemonstracaoUso
+FUNÇÃO: principal
+OBJETIVO: Mostra uma única ação de uso do produto.
+ENTRADAS: Referências que sustentem mecanismo, acessórios e ação; ficha confiável quando necessário.
+QUANDO ESCOLHER: Usar apenas quando o funcionamento estiver demonstrado pelas entradas. Sem evidência, escolher apresentação/detalhes.
+QUADRO INICIAL: Estado imediatamente anterior à ação, com objetos necessários já presentes e relações físicas claras.
+AÇÃO: Uma ação de uso completa, com início e resultado compatíveis com oito segundos.
+LIMITES: Não inventar acessórios, capacidades, mecanismos ou eficácia. Contexto escolhe POV ou pessoa visível.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+DemonstracaoUso.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: DemonstracaoUso_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

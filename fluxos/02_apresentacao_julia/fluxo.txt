@@ -1,0 +1,19 @@
+FLUXO: 02_apresentacao_julia
+CATEGORIA: ApresentacaoJulia
+FUNÇÃO: principal
+OBJETIVO: Júlia apresenta visualmente um produto.
+ENTRADAS: Identidade e foto inequívoca do produto; cena opcional.
+QUANDO ESCOLHER: Adequado quando ver a pessoa com o produto ajuda a entender sua escala e apresentação.
+QUADRO INICIAL: Júlia e produto na posição inicial resolvida. Produto já apoiado ou sustentado de forma plausível, detalhe principal visível.
+AÇÃO: Uma apresentação curta, com pequeno movimento do produto ou gesto junto ao item, conforme o contexto.
+LIMITES: Não levantar item grande, pesado ou fixo. Não prometer experiência pessoal.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+ApresentacaoJulia.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: ApresentacaoJulia_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

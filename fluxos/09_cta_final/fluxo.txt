@@ -1,0 +1,19 @@
+FLUXO: 09_cta_final
+CATEGORIA: CTAFinal
+FUNÇÃO: cta
+OBJETIVO: Júlia encerra convidando a audiência a agir.
+ENTRADAS: Referências de identidade; cena opcional. Produto não é obrigatório.
+QUANDO ESCOLHER: Somente encerramento. Sem obrigação de começar com Bora. Não selecionar como apresentação principal.
+QUADRO INICIAL: Júlia olha para a câmera com expressão natural, mãos anatomicamente plausíveis em posição inicial de gesto discreto.
+AÇÃO: Pronunciar a fala exata do contexto, fazer um gesto pequeno e terminar em pose calma.
+LIMITES: Não demonstrar nem reapresentar o produto. Objetos incidentais permanecem incidentais.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+CTAFinal.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: CTAFinal_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.

@@ -1,0 +1,18 @@
+DETALHESPRODUTO — MODELO DE IMAGEM
+
+REGRAS FIXAS DA IMAGEM
+Destino pretendido: Nano Banana 2. Fotografia vertical 9:16.
+Receber IDENTIDADE, CONTEXTO_RESOLVIDO e as imagens efetivamente anexadas com seus papéis identificados. Nomes de arquivos escritos no prompt não substituem anexos.
+Só executar contexto com status pronto e fluxo correspondente a esta pasta. Se faltar contexto resolvido, retornar CONTEXTO_AUSENTE; não inventar decisões.
+O contexto é a única fonte das escolhas de produto, cenário, roupa, câmera, mão, gesto, objetos, luz e enquadramento. Executar somente o estado_inicial, nunca antecipar o estado_final.
+A identidade original rege a aparência de Júlia somente nas partes visíveis. As referências do produto regem sua geometria, cor, variante, peças, textura aparente e inscrições legíveis. Não misturar variantes.
+Não inserir rosto ou corpo por existir descrição facial na identidade. Respeitar visibilidade_pessoa.
+Mãos, quando previstas: adultas femininas, tom de pele consistente com Júlia, proporções naturais, unhas curtas e bem cuidadas com acabamento natural. Não adicionar anéis, pulseiras ou tatuagens ausentes das referências. Se o contexto preservar um detalhe visível comprovado, seguir esse detalhe.
+Contato, perspectiva, apoio, escala e sombras plausíveis. Não inventar dimensões exatas.
+Sem legendas, textos sobrepostos, interfaces ou marcas-d'água adicionadas. Preservar inscrições reais do produto; não criar novas.
+Não desenhar a fala ou o JSON. Entregar somente uma imagem.
+
+CONTRATO DESTE FLUXO
+Produto em destaque para observar um detalhe visível.
+Produto e detalhe real em foco, com enquadramento próximo mas sem inventar superfícies ou inscrições.
+Pessoa opcional e limitada às partes definidas no contexto. Não exigir rosto nem roupas.

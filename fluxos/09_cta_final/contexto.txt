@@ -1,0 +1,8 @@
+ESTADO: MODELO_NAO_RESOLVIDO
+Não enviar este arquivo como contexto pronto ao gerador.
+
+Use CLASSIFICADOR_UNIVERSAL.txt e as referências do lote para produzir o contexto específico de 09_cta_final.
+A IA deve preencher todos os campos do contrato incluído no classificador: produto, referências, ambiente, identidade visível, roupa, enquadramento, estado inicial, pegada/ação, cronograma, estado final e áudio.
+Escolher uma única solução, sem lista de opções. Substituir este arquivo apenas na pasta da execução, preservando o modelo desta biblioteca.
+A fala é de encerramento e não começa com "Bora". Escolher o convite somente nesta etapa.
+CTA padrão autorizado para esta biblioteca: convidar ao grupo pelo link da bio e/ou pedir comentário "eu quero" para o link do produto. Não afirmar entrega automática. Escolher uma fala curta que caiba em oito segundos. Exemplo permitido, a escolher aqui: "Quer mais achadinhos? Entra no grupo pelo link da bio e comenta eu quero!"

@@ -1,0 +1,20 @@
+POVAPRESENTAR — MODELO DE VÍDEO
+
+REGRAS FIXAS DO VÍDEO
+Destino pretendido: Omni 1.1 Flash. Vertical 9:16. Duração exata de 8 segundos.
+Receber a IMAGEM_INICIAL validada, o MESMO CONTEXTO_RESOLVIDO da imagem e a identidade aplicável. Anexar a imagem como quadro inicial.
+Só executar contexto pronto e correspondente a este fluxo. Se imagem e contexto se contradisserem, retornar ENTRADA_INCONSISTENTE; não redesenhar a cena para compensar.
+Primeiro quadro corresponde à imagem inicial. Manter produto, identidade, mãos, figurino, cenário, apoio, luz e escala. Uma tomada contínua, sem cortes, transições, órbitas ou movimentos bruscos.
+Executar literalmente acao, cronograma e estado_final definidos no contexto. Não escolher outra ação, fala ou ambiente.
+Não deformar produto, multiplicar objetos/dedos, atravessar superfícies, levitar nem trocar de mão sem previsão. Movimento do objeto acompanha contato e gravidade plausíveis.
+Quando audio.ativo for verdadeiro, pronunciar somente audio.fala_exata em português brasileiro, com audio.voz. Pessoa em quadro fala com sincronização labial; em POV, voz da pessoa atrás da câmera; sem pessoa, locução conforme contexto. Não inventar segundo falante.
+Começar em audio.inicio_s; terminar até 6,8 s, sem acelerar artificialmente nem cortar palavras. Se não couber, devolver para revisão do contexto, não reescrever aqui.
+Nos clipes de abertura, a primeira palavra audível é Bora, sem som anterior; reticências indicam pausa breve, não são pronunciadas.
+Nos demais clipes, não acrescentar Bora. CTA final não recebe assinatura de abertura.
+Sem música. Ambiência discreta somente conforme contexto. Quando audio.ativo for falso, não inventar fala.
+Sem legenda ou texto sobreposto. Último intervalo até 8,0 s com posição estável e sem começar nova ação.
+Estas são instruções de geração; duração, fidelidade e áudio precisam ser verificados na saída.
+
+CONTRATO DESTE FLUXO
+Um movimento pequeno de apresentação ou inspeção, preservando apoio e pegada.
+Somente mãos e antebraços. Não mostrar outra pessoa de frente. Não revelar verso desconhecido.

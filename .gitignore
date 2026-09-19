@@ -1,0 +1,72 @@
+# Segredos e configuração local
+.env
+.env.*
+!.env.example
+
+# Ambientes, caches e artefatos Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.backup
+*.backup-*
+~$*
+
+# Logs
+logs/
+*.log
+
+# Estado operacional e pacotes gerados
+/preparados/
+entregas_flow/
+entradas/backups/
+referencia_gflow_original/
+
+# Planilha e insumos reais
+entradas/controle_pipeline_flow.xlsx
+entradas/*.png
+entradas/*.jpg
+entradas/*.jpeg
+entradas/*.webp
+entradas/*.gif
+entradas/*.mp4
+entradas/*.mov
+entradas/*.webm
+
+# Identidade e modelos locais ainda não sanitizados
+/CLASSIFICADOR_UNIVERSAL.txt
+/identidade/
+/identidade.txt
+/UNICO_identidade.txt
+/rosto*.jpeg
+/rosto*.jpg
+/Corpo.png
+/InicioJuliaCTA_05.jpg
+/contexto.txt
+/modelo.txt
+/CTA_Contexto_modelo.txt
+/CTA_IMG_modelo.txt
+/CTA_Video_modelo.txt
+/InicioJuliaCTA.txt
+/proposta_pov/
+
+# Arquivos pesados e produções exportadas
+*.zip
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv

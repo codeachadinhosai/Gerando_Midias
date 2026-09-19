@@ -1,0 +1,19 @@
+FLUXO: 03_pov_pegar
+CATEGORIA: POVPegar
+FUNÇÃO: principal
+OBJETIVO: Primeira pessoa: mão alcança, pega e apresenta um produto.
+ENTRADAS: Foto inequívoca do produto; identidade para aparência visível; cena opcional.
+QUANDO ESCOLHER: Somente quando houver base suficiente para uma pegada e levantamento plausíveis. Se tamanho/peso forem incertos, preferir outro fluxo.
+QUADRO INICIAL: Produto apoiado; mão aberta próxima, antes do contato. Espaço livre para toda a trajetória resolvida.
+AÇÃO: Aproximar, tocar, fechar pegada, levantar pouco e sustentar; uma cadeia contínua de ação.
+LIMITES: Somente mãos e antebraços. Câmera corporal estável quando houver duas mãos. Não começar com produto já levantado.
+
+ARQUIVOS
+modelo.txt = executor de imagem.
+POVPegar.txt = executor de vídeo.
+contexto.txt = instruções para produzir o contexto específico; NÃO é contexto pronto.
+
+PREPARAÇÃO
+Copiar estes modelos para uma pasta de execução exclusiva e substituir contexto.txt pelo contexto resolvido entregue pelo classificador. Não editar os modelos para cada produto. A identidade e referências ficam em ../../identidade/ e devem ser anexadas/copiadas para a execução quando aplicáveis.
+Nome da referência principal na fila: POVPegar_NN.ext, com NN único entre execuções da mesma categoria; ext jpg, jpeg, png ou webp. Registrar origem e destino no encaminhamento.
+As referências auxiliares devem ser registradas por papel; a fila atual não implementa esse manifesto. Consulte ../../LEIA-ME.md antes de executar.
