@@ -1,7 +1,7 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 3 em andamento — estados e logs versionados localmente; hashes e aprovação pendentes
-Última atualização: 2026-09-19  
+Status: Fase 6 em andamento — acessibilidade, responsividade e experiência visual concluídas
+Última atualização: 2026-09-20
 Documento de referência para continuidade entre contas e sessões do Codex.
 
 ## 1. Objetivo
@@ -135,7 +135,7 @@ GFLOW_ROOT=D:/caminho/para/gflow-videos
 PIPELINE_SPREADSHEET=entradas/controle_pipeline_flow.xlsx
 PIPELINE_OUTPUT_DIR=preparados
 PIPELINE_DELIVERY_DIR=entregas_flow
-GFLOW_VIDEO_MODEL=veo-fast
+GFLOW_VIDEO_MODEL=omni-flash
 GFLOW_TIMEOUT_SECONDS=1800
 WEB_HOST=127.0.0.1
 WEB_PORT=8765
@@ -321,11 +321,20 @@ testes de integração.
 
 Critério: interrupções podem ser retomadas sem duplicar ativos.
 
+Status: concluída. Estados e logs foram normalizados; hashes, aprovação, locks,
+retomada e idempotência foram reforçados; e as migrações históricas possuem
+simulação, backup, aplicação atômica e testes de integração sem chamadas reais
+ao Flow.
+
 ### Fase 4 — Interface somente leitura
 
 Construir painel, produções, clipes, imagens, entregas e logs.
 
 Critério: abrir o painel não altera nenhum estado.
+
+Status: concluída. O backend FastAPI local, as consultas de produções, clipes,
+mídias, entregas e logs, as travas de somente leitura, o painel HTML responsivo
+e a validação visual e de acessibilidade estão concluídos.
 
 ### Fase 5 — Operação pela interface
 
@@ -334,10 +343,24 @@ rejeitar, gerar carrosséis, liberar vídeos e acompanhar execução.
 
 Critério: concluir o fluxo sem editar a planilha manualmente, mantendo travas.
 
+Status: concluída. Preparação de pacotes, download do ZIP consolidado,
+importação de respostas existentes ou enviadas e registro de imagens na revisão
+ativa estão disponíveis na interface. Aprovação e rejeição vinculadas ao hash e
+à revisão também estão concluídas. A galeria e a geração versionada de
+carrosséis locais estão disponíveis sem depender da aprovação de vídeo.
+A liberação unitária de vídeo, a execução em segundo plano e o acompanhamento
+também estão implementados. A auditoria de segurança, caminhos, comandos,
+concorrência e trava de créditos foi concluída com regressões específicas.
+
 ### Fase 6 — Acabamento
 
 Acessibilidade, responsividade, documentação, comando único, CI e release
 `v1.0.0`.
+
+Status: em andamento. O refinamento de acessibilidade, responsividade e
+experiência visual foi concluído sem alterar os fluxos operacionais. Restam a
+consolidação da documentação final, a configuração de CI e a auditoria de
+release.
 
 ## 12. Modelo recomendado
 
@@ -356,10 +379,9 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Iniciar com gate próprio o reforço dos hashes e do vínculo de aprovação à
-revisão correta. Locks, retomada, idempotência e migrações históricas permanecem
-atividades posteriores. A configuração ou publicação em remoto continua sendo
-uma atividade separada.
+Consolidar a documentação final e a solução de problemas da Fase 6. A
+configuração de CI, publicação em remoto, release e tag continuam atividades
+separadas.
 
 Já concluído nesta fase:
 
@@ -379,6 +401,38 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-21 - Auditoria Git e portabilidade dos testes
+
+Atividade concluida sem versionar configuracoes locais, producoes ou midias
+reais.
+
+- screenshots temporarios do painel passaram a ser ignorados;
+- UUID de projeto, caminhos da maquina e exemplos de producao real foram
+  removidos dos arquivos candidatos;
+- testes do executor e dos contratos passaram a criar revisoes, pacotes,
+  anexos e respostas sinteticos em diretorios temporarios;
+- uma copia contendo somente arquivos visiveis ao Git simulou um clone limpo;
+- verificacao: 152 testes passaram no ambiente isolado, a compilacao Python
+  passou e `git diff --check` nao encontrou erros;
+- `ruff` nao estava instalado no ambiente e permaneceu como verificacao
+  pendente.
+
+### 2026-09-20 - Omni Flash obrigatório para vídeo
+
+Decisão arquitetural concluída sem versionar produções ou mídias reais.
+
+- `omni-flash` passou a ser o único modelo de vídeo aceito pelo domínio,
+  pelas CLIs e pelas operações do painel;
+- configurações explícitas com outro modelo agora falham antes de criar uma
+  tentativa ou chamar o Flow;
+- `.env.example`, arquitetura, fluxo operacional e guia de preenchimento
+  foram alinhados à regra;
+- uma tentativa com erro de configuração foi reconciliada somente após
+  confirmar log não retentável e ausência de arquivo de saída, preservando
+  seu histórico;
+- verificação: 152 testes passaram; gerações reais permanecem fora do
+  versionamento e exigem aprovação humana vinculada ao frame.
 
 ### 2026-09-19 — Inventário anterior à Fase 1
 
@@ -811,6 +865,415 @@ indisponível no ambiente atual.
 
 Próxima ação: iniciar, sob novo gate `high`, o reforço dos hashes e do vínculo
 de aprovação à revisão correta, sem reutilizar automaticamente este gate.
+
+### 2026-09-20 — Hashes e vínculo de aprovação da Fase 3
+
+Atividade concluída tecnicamente sem chamar o Flow, gerar mídia, apagar ativos
+históricos ou migrar em massa estados operacionais.
+
+- a resposta importada passou a ser conferida contra o SHA-256 que nomeia sua
+  pasta de revisão;
+- `plano_producao.json` e cada `plano_clipe.json` passaram a ser
+  comparados com o conteúdo validado de `resposta_ia.json` antes da execução;
+- novos registros de imagem e vídeo em `execucao.json` passaram a usar
+  esquema versionado, SHA-256 do arquivo, SHA-256 da revisão importada e
+  fingerprint operacional;
+- o vínculo técnico de aprovação passou a registrar produção, clipe, pacote,
+  revisão, fingerprint, caminho canônico e SHA-256 exato do frame;
+- vídeo passa a ser bloqueado se qualquer parte do vínculo divergir da revisão
+  ou do arquivo atual;
+- ativar uma revisão diferente limpa a aprovação na planilha, enquanto
+  reimportar a mesma revisão preserva a decisão já registrada;
+- gerar ou registrar outra imagem revoga a aprovação anterior; sincronizações
+  comuns e vídeos históricos concluídos não reescrevem a célula;
+- aprovações históricas sem identificação de revisão falham de modo seguro e
+  exigem nova revisão humana, sem apagar a mídia anterior;
+- arquitetura e guia operacional foram atualizados com o novo contrato.
+
+Verificações: 69 testes aprovados sem cache, incluindo adulteração de resposta,
+mudança de revisão, aprovação legada, troca de frame e preservação idempotente;
+compilação de `src/`, `scripts/` e `tests/`; e
+`git diff --check` sem erros. O Ruff não foi executado porque continua
+indisponível no ambiente atual. Nenhuma chamada ao Flow foi feita.
+
+Arquivos alterados: executor, orquestrador, importador, carrossel, três módulos
+de teste, arquitetura, guia operacional e este plano. As alterações permanecem
+sem commit nesta atividade.
+
+Próxima ação: iniciar, sob novo gate `high`, o reforço de locks, retomada
+e idempotência. Migrações históricas e testes de recuperação permanecem em
+bloco posterior.
+
+### 2026-09-20 — Locks, retomada e idempotência da Fase 3
+
+Atividade concluída tecnicamente sem chamar o Flow, gerar mídia, apagar ativos
+históricos ou executar migração de estado.
+
+- criado um lock por clipe com esquema versionado, token aleatório, PID,
+  host, operação, horário e contexto da revisão;
+- uma execução concorrente com processo local ativo é bloqueada; locks locais
+  órfãos são arquivados em `logs/locks/` antes da retomada, enquanto locks de
+  outro host, inválidos ou malformados falham de modo seguro e são preservados;
+- a verificação de processo no Windows usa consulta somente leitura, sem enviar
+  sinais ao processo proprietário;
+- executor e carrossel compartilham a mesma exclusão mútua por clipe, e a
+  liberação só remove o lock quando o token ainda pertence à execução atual;
+- cada tentativa recebe chave de idempotência determinística vinculada à
+  produção, clipe, etapa, modelo, revisão, fingerprint, pacote e, no vídeo, ao
+  frame aprovado;
+- o estado da tentativa distingue `preparada` de `submetida`: tentativas que
+  não chegaram ao envio podem ser refeitas, mas envios incertos sem saída local
+  são bloqueados para impedir cobrança e mídia duplicadas;
+- uma tentativa submetida que já possua exatamente uma saída local válida é
+  promovida para o registro de mídia sem novo envio ao Flow;
+- caminhos de tentativa e saída são validados dentro da pasta do clipe, e uma
+  tentativa de vídeo não pode aceitar imagem como resultado;
+- arquitetura e guia operacional foram atualizados com as regras de
+  concorrência, recuperação e intervenção manual.
+
+Verificações: 82 testes aprovados sem cache, incluindo concorrência, lock
+órfão, lock estrangeiro ou malformado, troca de token, retomada sem reenvio,
+envio incerto, adulteração da chave de idempotência e separação estrita entre
+saídas de imagem e vídeo; compilação de `src/`, `scripts/` e `tests/`; e
+`git diff --check` sem erros. Os avisos exibidos limitam-se à futura
+normalização CRLF/LF pelo Git. O Ruff não foi executado porque continua
+indisponível no ambiente atual. Nenhuma chamada ao Flow foi feita.
+
+Arquivos alterados nesta atividade: controle de execução, executor, carrossel,
+dois módulos de teste, arquitetura, guia operacional e este plano. As
+alterações permanecem sem commit.
+
+Próxima ação: iniciar, sob novo gate `high`, as migrações e os testes de
+integração de recuperação da Fase 3.
+
+### 2026-09-20 — Migrações e recuperação da Fase 3
+
+Atividade concluída tecnicamente sem chamar o Flow, gerar mídia, aplicar a
+migração aos estados reais, apagar arquivos históricos ou publicar alterações.
+
+- criado um migrador explícito de `execucao.json`, com simulação como padrão e
+  aplicação somente mediante `--aplicar`;
+- a aplicação usa o lock compartilhado do clipe, preserva backup imutável pelo
+  hash do estado original e grava o estado novo de forma atômica;
+- estados, mídias, aprovações e tentativas têm suas versões validadas antes de
+  qualquer escrita, e formatos desconhecidos falham de modo seguro;
+- aprovações legadas sem vínculo comprovável são arquivadas no histórico e
+  exigem nova revisão humana; o sistema pode limpar a célula `aprovacao`, mas
+  nunca conceder aprovação;
+- revisões com clipes pendentes podem ser auditadas sem liberar esses clipes
+  para execução, e estados sob `antigos/` permanecem fora da migração;
+- adicionado teste de integração com planilha XLSX real para recuperar uma
+  tentativa submetida com saída local, promovendo-a sem nova chamada ao Flow;
+- arquitetura e guia operacional foram atualizados com simulação, aplicação,
+  backups, reaprovação e procedimento de recuperação.
+
+Verificações finais: 91 testes e 3 subtestes aprovados sem cache; compilação de
+`src/`, `scripts/` e `tests`; CLI executada em modo simulação sobre os dados
+locais, com 45 estados migráveis, nenhum erro e 1 estado histórico preservado;
+e `git diff --check` sem erros. Os avisos exibidos limitam-se à futura
+normalização CRLF/LF pelo Git. O Ruff não foi executado porque continua
+indisponível no ambiente atual. Nenhuma chamada ao Flow foi feita.
+
+Arquivos alterados nesta atividade: migrador e wrapper compatível, CLI,
+adaptador XLSX, carregamento de revisões, testes de migração e recuperação,
+arquitetura, guia operacional e este plano. As alterações da Fase 3 permanecem
+sem commit.
+
+O critério da Fase 3 foi cumprido: interrupções com resultado local válido são
+retomadas sem duplicar ativos, enquanto resultados incertos permanecem
+bloqueados. Próxima ação: iniciar, sob novo gate `medium`, o backend local e as
+consultas somente leitura da Fase 4.
+
+### 2026-09-20 — Backend e consultas somente leitura da Fase 4
+
+Atividade concluída sem expor o servidor à rede, alterar estados operacionais,
+executar o pipeline ou chamar o Flow.
+
+- criado `pipeline_flow.web` com uma aplicação FastAPI e um modelo de leitura
+  recomposto a cada requisição;
+- adicionadas consultas para painel, produções, revisões, clipes, mídias,
+  entregas e eventos operacionais;
+- todas as rotas funcionais usam `GET`; tentativas de escrita recebem `405`;
+- o servidor aceita apenas `localhost` e endereços de loopback, rejeitando
+  `0.0.0.0` e endereços da rede local;
+- caminhos de entrega são validados contra a raiz configurada, caminhos
+  externos são reduzidos ao nome e comandos persistidos não são expostos;
+- valores históricos inválidos da planilha são exibidos como diagnósticos sem
+  ocultar as linhas restantes nem regravar o arquivo;
+- criado `scripts/servir_painel.py` como comando compatível e declaradas as
+  dependências FastAPI e Uvicorn;
+- ampliado o ignore para artefatos Graphify em subpastas e `*.egg-info/`.
+
+Verificações: 98 testes e 3 subtestes aprovados sem cache; compilação de `src/`,
+`scripts/` e `tests`; ajuda da nova CLI com código 0; consulta sobre os dados
+locais retornando 5 produções ativas, 25 clipes, 28 entregas e 1 diagnóstico
+histórico; e comparação de 48 hashes antes e depois da consulta, todos
+inalterados. `git diff --check` não encontrou erros. O único aviso da suíte é
+uma depreciação interna do `TestClient` do FastAPI/Starlette. O Ruff permanece
+indisponível. Nenhuma chamada ao Flow foi feita.
+
+Arquivos alterados nesta atividade: configuração de dependências e ignores,
+leitor XLSX, pacote web, wrapper da CLI, testes, arquitetura e este plano. As
+alterações permanecem sem commit.
+
+Próxima ação: iniciar, sob novo gate `medium`, o painel HTML de produções,
+clipes, imagens, entregas e logs da Fase 4.
+
+### 2026-09-20 — Painel visual e conclusão da Fase 4
+
+Atividade concluída sem alterar estados operacionais, executar o pipeline,
+aprovar imagens ou chamar o Flow.
+
+- construído painel HTML local com visão geral, indicadores, próximas ações,
+  diagnósticos, produções, clipes, prévias de mídia, entregas e eventos;
+- adicionados filtros por texto, produção e próxima ação, estados vazios,
+  mensagens de falha e atualização manual dos dados;
+- aplicado layout responsivo, navegação por teclado, foco visível, região viva,
+  redução de movimento, cores semânticas e impressão simplificada;
+- revisada a semântica da navegação com `aria-current`, garantida a visibilidade
+  da seção ativa em navegação horizontal e contextualizados os textos
+  alternativos das mídias;
+- preservadas as rotas exclusivamente de leitura, a restrição a loopback e as
+  validações de caminhos e extensões de mídia.
+
+Verificações: 101 testes e 3 subtestes aprovados sem cache; compilação de
+`src/`, `scripts/` e `tests`; smoke test real em Chrome nas larguras 1440, 768,
+390 e 320 px, sem overflow da página, respostas HTTP com erro ou perda de
+visibilidade da seção ativa; contraste principal entre 4,55:1 e 9,99:1; e
+`git diff --check` sem erros. Permanece apenas o aviso conhecido de depreciação
+interna do `TestClient`; o Ruff continua indisponível no ambiente.
+
+O critério da Fase 4 foi cumprido: abrir e navegar pelo painel não altera
+estado. As alterações das Fases 3 e 4 permanecem sem commit. Próxima ação:
+iniciar, sob novo gate `medium`, a preparação de pacotes, importação de
+respostas e registro de imagens pela interface na Fase 5.
+
+### 2026-09-20 — Pacotes, respostas e imagens pela interface na Fase 5
+
+Atividade concluída sem chamar o Flow, aprovar imagens, gerar mídia ou liberar
+vídeo. As mutações exercitadas pelos testes usaram somente diretórios temporários.
+
+- criada a fachada `pipeline_flow.web.operations`, reutilizando os serviços
+  existentes de preparação, importação e registro de imagem;
+- a preparação atualiza revisões, relatório e ZIP consolidado, que pode ser
+  baixado pela interface sem aceitar caminho fornecido pelo navegador;
+- respostas existentes podem ser selecionadas e novos JSON podem ser enviados,
+  validados, importados com atualização da planilha e preservados em
+  `preparados/respostas_ia/`;
+- o registro de imagem aceita PNG, JPEG e WebP de até 50 MiB, valida extensão e
+  conteúdo, limita a operação à revisão ativa e reutiliza lock, histórico, cópia
+  para a revisão, revogação de aprovação anterior e sincronização da planilha;
+- todas as escritas exigem confirmação no formulário, diálogo final e cabeçalho
+  `X-Pipeline-Confirmation: confirmar`;
+- criada a seção responsiva `Operações`, com seleções dependentes, feedback
+  acessível e indicação explícita de que aprovação e Flow estão fora do bloco.
+
+Verificações: 109 testes e 6 subtestes aprovados sem cache; validação de sintaxe
+do JavaScript; compilação de `src/`, `scripts/` e `tests`; smoke test em Chrome
+nas larguras 1440, 768, 390 e 320 px, sem overflow, respostas HTTP com erro ou
+falhas de console; acesso direto à seção mantendo `scrollY=0`; ZIP disponível
+para download; e requisição de escrita sem confirmação recusada com HTTP 400.
+`git diff --check` não encontrou erros. Permanece o aviso conhecido de
+depreciação do `TestClient`; o Ruff continua indisponível no ambiente.
+
+Arquivos alterados nesta atividade: fachada e rotas web, HTML, CSS, JavaScript,
+dois módulos de teste, README, arquitetura e este plano. As alterações das Fases
+3, 4 e deste bloco da Fase 5 permanecem sem commit.
+
+Próxima ação concluída no registro abaixo.
+
+### 2026-09-20 — Aprovação e rejeição pela interface na Fase 5
+
+Atividade concluída sem chamar o Flow, gerar mídia ou iniciar vídeo. Aprovar na
+interface registra a decisão humana e seu vínculo técnico, mas a execução de
+vídeo permanece fora deste bloco.
+
+- criado caminho explícito `Workbook.set_human_approval`, restrito aos valores
+  `aprovada` e `rejeitada`, sem retirar a proibição de aprovação do método de
+  escrita sistêmica;
+- criada transação sob lock por clipe que reabre estado e planilha, bloqueia
+  clipes com vídeo, valida a imagem atual e compara o SHA-256 esperado pela tela;
+- a aprovação grava primeiro a planilha e depois o vínculo técnico; a rejeição
+  remove primeiro o vínculo, exige justificativa e só depois atualiza a planilha,
+  mantendo falhas parciais fechadas para vídeo;
+- decisões registram revisão, SHA-256, horário e justificativa no histórico do
+  estado e geram evento operacional estruturado;
+- criada a rota `POST /api/operations/review-image`, com confirmação obrigatória,
+  JSON limitado a 8 KiB e resposta `409` quando a imagem ficou obsoleta;
+- criada a seção responsiva `Revisão`, com prévia ampla, produto, papel, revisão,
+  hash, decisão atual, última justificativa, confirmação explícita e ações
+  distintas de aprovação e rejeição;
+- o modelo de leitura passou a expor a decisão humana, o resumo seguro da última
+  revisão e os indicadores do plano necessários para selecionar somente frames
+  que controlam vídeo.
+
+Verificações: 119 testes e 6 subtestes aprovados;
+compilação de `src/`, `scripts/` e `tests`; validação de sintaxe do JavaScript; e smoke test
+em Chrome nas larguras 1440, 768, 390 e 320 px, com 21 cards reais, `scrollY=0`,
+sem overflow horizontal, falhas de JavaScript ou respostas HTTP com erro. Os
+testes cobrem hash obsoleto, rejeição com justificativa e as duas ordens de
+falha parcial. Permanece somente o aviso conhecido de depreciação do
+`TestClient`.
+
+Próxima ação concluída no registro abaixo.
+
+### 2026-09-20 — Carrossel e operações locais pela interface na Fase 5
+
+Atividade concluída sem chamar o Flow, consumir créditos, gerar vídeo ou alterar
+dados operacionais reais. As gerações exercitadas pelos testes usaram somente
+diretórios temporários; o smoke test fez apenas consultas locais.
+
+- criada a seção responsiva `Carrossel`, agrupada por produção, com prévia 9:16,
+  conteúdo do plano, destino e palavra de CTA, contadores de caracteres e estado
+  da versão já gerada;
+- a autorização exige simultaneamente `gerar_carrossel=sim` na planilha e
+  `carrossel.ativo=true` no plano, mas é independente de `aprovacao` e nunca
+  autoriza nem inicia vídeo;
+- criada a rota `POST /api/operations/generate-carousel`, com confirmação
+  obrigatória, corpo JSON limitado a 8 KiB e resposta `409` para revisão ou hash
+  obsoleto;
+- o serviço reabre o clipe sob o lock operacional, revalida o SHA-256 esperado
+  e verifica que a saída é um PNG não vazio de 1080 x 1920;
+- gerar novamente cria um arquivo com identificador único e preserva todas as
+  versões anteriores; a saída continua restrita a `PIPELINE_DELIVERY_DIR`;
+- a próxima ação do painel prioriza o carrossel local autorizado sem confundir
+  essa permissão com a revisão humana necessária para vídeo.
+
+Verificações: 127 testes e 6 subtestes aprovados; compilação de `src/`,
+`scripts/` e `tests`; validação de sintaxe do JavaScript; e smoke test em Chrome
+nas larguras 1440, 768, 390 e 320 px, com 21 cards reais, `scrollY=0`, sem
+overflow horizontal, falhas de JavaScript ou respostas HTTP com erro. A revisão
+visual confirmou três colunas no desktop e uma coluna no celular. Os testes
+cobrem autorização independente, plano inativo, hash obsoleto, lock liberado em
+falha, validação do PNG, bloqueio de saída fora da pasta de entregas e
+regeneração que mantém a versão anterior.
+
+O skill `data-experience-designer` orientou a hierarquia, a leitura operacional,
+os estados explícitos e a revisão responsiva da galeria. Permanece somente o
+aviso conhecido de depreciação interna do `TestClient`. As alterações das Fases
+3, 4 e 5 continuam sem commit.
+
+Próxima ação concluída no registro abaixo.
+
+### 2026-09-20 — Liberação e acompanhamento de vídeo pela interface na Fase 5
+
+Atividade concluída sem chamar o Flow, consumir créditos, gerar mídia ou alterar
+estado operacional real. Todos os caminhos de execução foram exercitados com
+mocks e diretórios temporários; o smoke test enviou somente requisições GET.
+
+- criada a seção responsiva `Vídeos`, com diagnóstico do executor, prévias,
+  método, duração, modelo, vínculo de aprovação e estados bloqueado, pronto, na
+  fila, em execução, interrompido, falhou e concluído;
+- a rota `POST /api/operations/generate-video` aceita somente produção, revisão,
+  clipe, SHA-256 esperado e a frase exata `GERAR VIDEO`; binário, projeto,
+  modelo, timeout, diretórios e argumentos vêm exclusivamente da configuração;
+- a interface acrescenta checkbox e diálogo final sobre consumo de créditos;
+  o backend mantém o cabeçalho de confirmação e responde com HTTP `202`;
+- o preflight recusa revisão inativa, plano sem vídeo, vídeo concluído, tentativa
+  pendente, lock, imagem ausente ou obsoleta, aprovação desvinculada, projeto
+  ausente e `gflow.exe` indisponível;
+- o executor revalida o SHA-256 esperado dentro do lock, imediatamente antes de
+  preparar a tentativa e executar o comando fixo com `shell=False`;
+- toda nova geração exige `aprovacao=aprovada` e vínculo técnico, mesmo se o
+  campo `aprovacao_necessaria` de um plano futuro vier incorreto;
+- o processo atual do painel permite somente uma geração paga simultânea e usa
+  uma tarefa em segundo plano; estados persistentes, idempotência e retomada
+  conservadora continuam em `execucao.json`, locks e eventos;
+- criada a consulta `GET /api/operations/executions`; ela nunca devolve o
+  comando, redige o ID do projeto, resume timeouts e limita mensagens de erro;
+- o frontend faz polling apenas enquanto uma tarefa está ativa ou seu término
+  ainda não apareceu na leitura persistente.
+
+Verificações: 138 testes e 6 subtestes aprovados; compilação de `src/`,
+`scripts/` e `tests`; validação de sintaxe do JavaScript; busca por problemas de
+codificação nos arquivos alterados; e `git diff --check` sem erros. O smoke test
+em Chrome nas larguras 1440, 768, 390 e 320 px mostrou 25 clipes planejados, 3
+vídeos concluídos, `scrollY=0`, sem overflow horizontal, falhas de JavaScript,
+respostas HTTP com erro ou requisições POST. Como não há aprovação técnica
+vinculada e o `gflow.exe` configurado está ausente, nenhum botão pago foi
+exibido, que é o comportamento fechado esperado.
+
+O skill `data-experience-designer` orientou a hierarquia dos bloqueios, a
+separação entre diagnóstico e ação paga, os estados semânticos e a revisão
+responsiva. Permanece somente o aviso conhecido de depreciação interna do
+`TestClient`. As alterações das Fases 3, 4 e 5 continuam sem commit.
+
+Próxima ação: sob novo gate `high`, auditar segurança, caminhos, comandos,
+concorrência e trava de créditos da Fase 5.
+
+### 2026-09-20 — Auditoria de segurança e trava de créditos da Fase 5
+
+Auditoria concluída sem chamar o Flow, consumir créditos, gerar mídia ou alterar
+estado operacional real. As verificações usaram mocks, arquivos sintéticos e
+diretórios temporários.
+
+Achados corrigidos:
+
+- a trava de vídeo pago passou a ser global e persistente entre os processos
+  oficiais do projeto; um lock órfão é preservado para revisão manual porque o
+  efeito externo pode ser incerto;
+- a aprovação, o SHA-256 e o vínculo da revisão são revalidados novamente no
+  executor imediatamente antes de adquirir a trava e preparar a submissão;
+- tentativas novas guardam `comando_sha256`, mas não persistem linha de comando,
+  prompt nem ID de projeto; erros estruturados também redigem prompt e projeto;
+- mídia de estado precisa permanecer dentro da pasta da revisão, e o índice de
+  entregas não pode redirecionar cópias para fora da raiz autorizada;
+- índice de entregas e salvamento do XLSX receberam locks entre processos,
+  mantendo as verificações otimistas de hash e os backups existentes;
+- uploads e JSON são limitados durante o streaming; requisições de navegador
+  externas ou `cross-site` são bloqueadas; imagens têm limite seguro de pixels;
+- a API continua sem aceitar comandos, binários, argumentos, projeto, modelo ou
+  diretórios fornecidos pelo navegador e mantém `shell=False`.
+
+Verificações: 149 testes e 6 subtestes aprovados; compilação de `src/`,
+`scripts/` e `tests`; `git diff --check`; buscas estáticas por execução insegura,
+persistência indevida de comando, leitura integral de corpos HTTP e vazamento na
+API. `bandit` e `ruff` não estavam instalados, portanto nenhum pacote foi
+baixado apenas para a auditoria. O único aviso da suíte continua sendo a
+depreciação interna do `TestClient`.
+
+A consulta ao grafo local ajudou a localizar a relação entre executor, aprovação,
+planilha, entregas e locks; os achados foram confirmados diretamente no código.
+As alterações das Fases 3, 4 e 5 continuam sem commit.
+
+Próxima ação: iniciar a Fase 6 com novo gate, começando pelo refinamento de
+acessibilidade, responsividade e experiência visual.
+
+### 2026-09-20 — Acessibilidade e responsividade da Fase 6
+
+Atividade concluída sem chamar o Flow, consumir créditos, gerar mídia, enviar
+requisições de escrita ou alterar estado operacional.
+
+- a navegação passou a seguir o padrão semântico de abas, com
+  `tablist`, `tab`, `tabpanel`, seleção explícita, foco roving e suporte a
+  setas, `Home` e `End`;
+- a troca de seção deixou de mover o foco automaticamente para o título e o
+  carregamento inicial deixou de provocar deslocamento da página;
+- o painel agora informa carregamento, atualização e falha em todas as áreas,
+  usa `aria-busy` durante consultas e mantém o estado da conexão visível em
+  telas pequenas;
+- alvos de toque, navegação horizontal, quebra de conteúdo, cartões, eventos e
+  cabeçalho foram refinados até 320 px;
+- foram acrescentados comportamentos específicos para contraste aumentado,
+  cores forçadas e redução de movimento, sem depender apenas de cor para
+  comunicar estado.
+
+Verificações: 149 testes e 6 subtestes aprovados; compilação de `src/`,
+`scripts/` e `tests`; validação de sintaxe do JavaScript; e
+`git diff --check`. O smoke test real em Chrome percorreu as oito seções nas
+larguras 1440, 768, 390 e 320 px, com um único painel visível, `scrollY=0`,
+sem overflow horizontal, falhas de JavaScript, respostas HTTP com erro ou
+requisições POST. A navegação por setas e `Home` também foi exercitada.
+
+O skill `data-experience-designer` orientou hierarquia, estados, semântica,
+contraste e revisão responsiva. A consulta do Graphify mostrou que o grafo
+existente ainda não representa os ativos web atuais; por isso, o código e o
+navegador foram usados como fontes de verdade. Permanece somente o aviso
+conhecido de depreciação interna do `TestClient`. As alterações das Fases 3,
+4, 5 e 6 continuam sem commit.
+
+Próxima ação: consolidar a documentação final e a solução de problemas da
+Fase 6 sob novo gate `low`.
 
 Nenhuma fase deve ser marcada como concluída sem testes e sem atualização deste
 registro.

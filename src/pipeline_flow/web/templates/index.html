@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang='pt-BR'>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <meta name='color-scheme' content='light'>
+  <meta name='theme-color' content='#0d3528'>
+  <title>Pipeline Flow · Painel local</title>
+  <link rel='icon' href='data:,'>
+  <link rel='stylesheet' href='/static/app.css'>
+  <script src='/static/app.js' defer></script>
+</head>
+<body>
+  <a class='skip-link' href='#conteudo'>Pular para o conteúdo</a>
+  <header class='topbar'>
+    <div class='brand' aria-label='Pipeline Flow'>
+      <span class='brand-mark' aria-hidden='true'>PF</span>
+      <span><strong>Pipeline Flow</strong><small>Painel local · controle seguro</small></span>
+    </div>
+    <div class='top-actions'>
+      <span class='connection' id='connection-status' role='status' aria-live='polite' aria-atomic='true'>Conectando…</span>
+      <button class='button button-secondary' id='refresh-button' type='button'>Atualizar dados</button>
+    </div>
+  </header>
+
+  <nav class='section-nav' aria-label='Seções do painel' role='tablist'>
+    <button class='nav-tab is-active' id='overview-tab' type='button' role='tab' data-view='overview' aria-controls='overview' aria-selected='true' tabindex='0'>Visão geral</button>
+    <button class='nav-tab' id='productions-tab' type='button' role='tab' data-view='productions' aria-controls='productions' aria-selected='false' tabindex='-1'>Produções</button>
+    <button class='nav-tab' id='review-tab' type='button' role='tab' data-view='review' aria-controls='review' aria-selected='false' tabindex='-1'>Revisão</button>
+    <button class='nav-tab' id='carousel-tab' type='button' role='tab' data-view='carousel' aria-controls='carousel' aria-selected='false' tabindex='-1'>Carrossel</button>
+    <button class='nav-tab' id='videos-tab' type='button' role='tab' data-view='videos' aria-controls='videos' aria-selected='false' tabindex='-1'>Vídeos</button>
+    <button class='nav-tab' id='deliveries-tab' type='button' role='tab' data-view='deliveries' aria-controls='deliveries' aria-selected='false' tabindex='-1'>Entregas</button>
+    <button class='nav-tab' id='logs-tab' type='button' role='tab' data-view='logs' aria-controls='logs' aria-selected='false' tabindex='-1'>Eventos</button>
+    <button class='nav-tab' id='operations-tab' type='button' role='tab' data-view='operations' aria-controls='operations' aria-selected='false' tabindex='-1'>Operações</button>
+  </nav>
+
+  <main id='conteudo' tabindex='-1' aria-busy='true'>
+    <section class='view is-active' id='overview' data-section='overview' role='tabpanel' aria-labelledby='overview-tab overview-title'>
+      <div class='page-heading'>
+        <div>
+          <p class='eyebrow'>Situação operacional</p>
+          <h1 id='overview-title'>O que precisa da sua atenção agora</h1>
+          <p class='lede' id='overview-message'>Carregando o retrato atual do pipeline.</p>
+        </div>
+        <p class='updated-at' id='updated-at'>—</p>
+      </div>
+
+      <div class='notice notice-info' role='note'>
+        As telas de consulta não alteram arquivos. Decisões em Revisão e escritas em Operações exigem confirmação explícita.
+      </div>
+
+      <section aria-labelledby='kpi-title'>
+        <h2 class='sr-only' id='kpi-title'>Indicadores principais</h2>
+        <div class='kpi-grid' id='kpi-grid' aria-live='polite'>
+          <p class='loading-state'>Carregando indicadores…</p>
+        </div>
+      </section>
+
+      <div class='overview-grid'>
+        <section class='panel' aria-labelledby='actions-title'>
+          <div class='panel-heading'>
+            <div>
+              <p class='eyebrow'>Fila atual</p>
+              <h2 id='actions-title'>Próximas ações dos clipes</h2>
+            </div>
+          </div>
+          <div class='bar-list' id='action-bars'><p class='loading-state'>Carregando fila…</p></div>
+        </section>
+
+        <section class='panel' aria-labelledby='diagnostics-title'>
+          <div class='panel-heading'>
+            <div>
+              <p class='eyebrow'>Integridade</p>
+              <h2 id='diagnostics-title'>Diagnósticos</h2>
+            </div>
+          </div>
+          <div id='diagnostics-list'><p class='loading-state'>Verificando integridade…</p></div>
+        </section>
+      </div>
+
+      <section class='panel' aria-labelledby='recent-title'>
+        <div class='panel-heading'>
+          <div>
+            <p class='eyebrow'>Atividade</p>
+            <h2 id='recent-title'>Eventos mais recentes</h2>
+          </div>
+          <button class='text-button' type='button' data-go='logs'>Ver todos</button>
+        </div>
+        <div id='recent-events'><p class='loading-state'>Carregando eventos…</p></div>
+      </section>
+    </section>
+
+    <section class='view' id='productions' data-section='productions' role='tabpanel' aria-labelledby='productions-tab productions-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Exploração</p>
+          <h1 id='productions-title'>Produções e clipes</h1>
+          <p class='lede'>Filtre a revisão ativa e encontre rapidamente bloqueios, mídias e próximas ações.</p>
+        </div>
+      </div>
+      <form class='filter-bar' id='production-filters' role='search'>
+        <label>
+          <span>Buscar</span>
+          <input id='search-input' type='search' placeholder='Produção, clipe ou produto' autocomplete='off'>
+        </label>
+        <label>
+          <span>Produção</span>
+          <select id='production-filter'><option value=''>Todas</option></select>
+        </label>
+        <label>
+          <span>Próxima ação</span>
+          <select id='action-filter'><option value=''>Todas</option></select>
+        </label>
+        <button class='button button-secondary' id='clear-filters' type='button'>Limpar filtros</button>
+      </form>
+      <p class='result-count' id='production-result-count' aria-live='polite'></p>
+      <div class='production-list' id='production-list'><p class='loading-state'>Carregando produções…</p></div>
+    </section>
+
+    <section class='view' id='review' data-section='review' role='tabpanel' aria-labelledby='review-tab review-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Decisão humana</p>
+          <h1 id='review-title'>Revise o frame antes do vídeo</h1>
+          <p class='lede'>Cada decisão é vinculada ao arquivo, ao SHA-256 e à revisão ativa. Aprovar aqui não gera vídeo.</p>
+        </div>
+      </div>
+      <div class='notice notice-warning' role='note'>
+        Confira produto, anatomia, cenário, enquadramento e fidelidade visual. Se o frame mudou desde o carregamento, a decisão será bloqueada.
+      </div>
+      <div class='operation-feedback' id='review-feedback' role='status' aria-live='polite'></div>
+      <p class='result-count' id='review-result-count' aria-live='polite'></p>
+      <div class='review-grid' id='review-grid'><p class='loading-state'>Carregando frames…</p></div>
+    </section>
+
+    <section class='view' id='carousel' data-section='carousel' role='tabpanel' aria-labelledby='carousel-tab carousel-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Renderização local</p>
+          <h1 id='carousel-title'>Confira e gere os cards 9:16</h1>
+          <p class='lede'>A autorização vem de gerar_carrossel=sim. Esta operação usa somente arquivos locais e não aprova nem gera vídeo.</p>
+        </div>
+      </div>
+      <div class='notice notice-info' role='note'>
+        O texto vem do plano importado. Gerar novamente cria outro arquivo e preserva a versão anterior.
+      </div>
+      <div class='operation-feedback' id='carousel-feedback' role='status' aria-live='polite'></div>
+      <p class='result-count' id='carousel-result-count' aria-live='polite'></p>
+      <div class='carousel-list' id='carousel-list'><p class='loading-state'>Carregando cards…</p></div>
+    </section>
+
+    <section class='view' id='videos' data-section='videos' role='tabpanel' aria-labelledby='videos-tab videos-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Consumo controlado</p>
+          <h1 id='videos-title'>Libere um vídeo por vez</h1>
+          <p class='lede'>Somente frames aprovados e vinculados podem chegar ao Flow. O navegador nunca envia comandos ou configurações arbitrárias.</p>
+        </div>
+      </div>
+      <div class='notice notice-warning' role='note'>
+        Gerar vídeo pode consumir créditos. Cada liberação exige a frase GERAR VIDEO, confirmação final e nova validação do SHA-256 dentro do lock do clipe.
+      </div>
+      <div class='executor-summary' id='executor-summary'></div>
+      <div class='operation-feedback' id='video-feedback' role='status' aria-live='polite'></div>
+      <p class='result-count' id='video-result-count' aria-live='polite'></p>
+      <div class='video-list' id='video-list'><p class='loading-state'>Verificando liberações…</p></div>
+    </section>
+
+    <section class='view' id='deliveries' data-section='deliveries' role='tabpanel' aria-labelledby='deliveries-tab deliveries-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Arquivos finais</p>
+          <h1 id='deliveries-title'>Entregas</h1>
+          <p class='lede'>Índice local de imagens, vídeos e cards já exportados.</p>
+        </div>
+      </div>
+      <div class='delivery-grid' id='delivery-grid'><p class='loading-state'>Carregando entregas…</p></div>
+    </section>
+
+    <section class='view' id='logs' data-section='logs' role='tabpanel' aria-labelledby='logs-tab logs-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Auditoria</p>
+          <h1 id='logs-title'>Eventos operacionais</h1>
+          <p class='lede'>Histórico estruturado das etapas executadas pelo pipeline.</p>
+        </div>
+      </div>
+      <div class='event-list' id='event-list'><p class='loading-state'>Carregando eventos…</p></div>
+    </section>
+
+    <section class='view' id='operations' data-section='operations' role='tabpanel' aria-labelledby='operations-tab operations-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Operação local</p>
+          <h1 id='operations-title'>Prepare e registre com segurança</h1>
+          <p class='lede'>Estas ações alteram arquivos locais e a planilha. Nenhuma delas aprova imagens, gera vídeos ou chama o Flow.</p>
+        </div>
+      </div>
+
+      <div class='notice notice-warning' role='note'>
+        Confira produção, revisão e arquivo antes de confirmar. Cada operação atualiza os dados do painel ao terminar.
+      </div>
+      <div class='operation-feedback' id='operation-feedback' role='status' aria-live='polite'></div>
+
+      <div class='operation-grid'>
+        <form class='operation-card' id='prepare-form'>
+          <p class='operation-step'>1</p>
+          <h2>Preparar pacotes</h2>
+          <p>Releia a planilha, monte as revisões e atualize o ZIP consolidado para classificação.</p>
+          <label class='confirm-field'>
+            <input type='checkbox' name='confirm' required>
+            <span>Confirmo que a planilha foi salva e pode ser lida agora.</span>
+          </label>
+          <a class='download-link' id='latest-package-link' href='/api/operations/package-latest' download hidden>Baixar ZIP mais recente</a>
+          <button class='button button-primary' type='submit'>Preparar pacotes</button>
+        </form>
+
+        <form class='operation-card' id='import-form'>
+          <p class='operation-step'>2</p>
+          <h2>Importar resposta da IA</h2>
+          <label><span>Pacote preparado</span><select id='import-package' required></select></label>
+          <label><span>Resposta já salva</span><select id='import-response'><option value=''>Selecionar resposta</option></select></label>
+          <label><span>Ou enviar resposta JSON</span><input id='import-file' type='file' accept='application/json,.json'></label>
+          <p class='field-help'>Se um arquivo for enviado, ele terá prioridade sobre a resposta já salva.</p>
+          <label class='confirm-field'>
+            <input type='checkbox' name='confirm' required>
+            <span>Confirmo o pacote e a resposta selecionados.</span>
+          </label>
+          <button class='button button-primary' type='submit'>Validar e importar</button>
+        </form>
+
+        <form class='operation-card' id='register-image-form'>
+          <p class='operation-step'>3</p>
+          <h2>Registrar imagem pronta</h2>
+          <label><span>Produção ativa</span><select id='image-production' required></select></label>
+          <label><span>Clipe</span><select id='image-clip' required></select></label>
+          <label><span>Imagem</span><input id='image-file' type='file' accept='image/png,image/jpeg,image/webp' required></label>
+          <p class='field-help'>A imagem será copiada para a revisão; qualquer aprovação anterior será revogada.</p>
+          <label class='confirm-field'>
+            <input type='checkbox' name='confirm' required>
+            <span>Confirmo o clipe e a imagem escolhidos.</span>
+          </label>
+          <button class='button button-primary' type='submit'>Registrar imagem</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Dados locais · Sem telemetria · Escritas locais somente com confirmação</p>
+  </footer>
+  <div class='sr-only' id='live-region' aria-live='polite'></div>
+</body>
+</html>

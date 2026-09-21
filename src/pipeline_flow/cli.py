@@ -164,6 +164,7 @@ def executor_args(args, action: str, supplied: Path | None = None):
         modelo_video=args.modelo_video,
         timeout=args.timeout,
         delivery_dir=args.delivery_dir,
+        credit_lock_path=args.output_dir / '.locks' / 'video-credit.lock',
     )
 
 
@@ -188,7 +189,7 @@ def run_clip(clip: dict, args) -> list[dict]:
     carousel_plan = clip["plan"].get("carrossel")
     if frame_available and isinstance(carousel_plan, dict) and carousel_plan.get("ativo"):
         state = flow.state_for(clip)
-        frame = flow.media(state["imagem"]) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
+        frame = flow.media(state["imagem"], clip) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
         expected = signature({"imagem": digest(frame), "carrossel": carousel_plan})[:12]
         current = state.get("carrossel", {})
         if expected not in Path(current.get("arquivo", "")).name:
@@ -198,14 +199,13 @@ def run_clip(clip: dict, args) -> list[dict]:
             events.append({"etapa": "carrossel", "resultado": "ja concluido"})
 
     if pipe["aprovacao_necessaria"] and frame_available:
-        approval = state.get("aprovacao", {})
-        frame = flow.media(state["imagem"]) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
-        bound = approval.get("sha256") == digest(frame) and approval.get("arquivo") == str(frame)
+        frame = flow.media(state["imagem"], clip) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
+        bound = flow.approval_is_bound(clip, state.get("aprovacao"), frame)
         if norm(row["aprovacao"]) == "aprovada" and not bound and had_frame_at_start:
             result = flow.execute(clip, executor_args(args, "aprovar"))
             events.append({"etapa": "aprovar", "resultado": result})
             state = flow.state_for(clip)
-            bound = True
+            bound = flow.approval_is_bound(clip, state.get("aprovacao"), frame)
         if not bound:
             events.append({"etapa": "video", "resultado": "aguardando revisao e aprovacao humana da imagem"})
             return events
@@ -483,10 +483,7 @@ def human_next_action(report: dict) -> str:
         lines.append("")
         lines.append("E rode novamente:")
         lines.append("")
-        lines.append(
-            r"python .\scripts\rodar_pipeline.py --projeto "
-            r"afdedea7-dcc2-484c-98ab-6a93016cdec3"
-        )
+        lines.append(r"python .\scripts\rodar_pipeline.py")
 
         # Produções que ainda não puderam entrar no pacote.
         if preparation_pending:

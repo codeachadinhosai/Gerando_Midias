@@ -7,11 +7,12 @@
 .venv/
 venv/
 __pycache__/
+*.egg-info/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-/graphify-out/
+graphify-out/
 .coverage
 htmlcov/
 
@@ -20,6 +21,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+/.tmp-panel-*.png
 *.tmp
 *.bak
 *.backup

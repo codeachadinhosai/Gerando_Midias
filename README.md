@@ -3,8 +3,8 @@
 Pipeline local para preparar insumos, importar a classificação da IA, registrar
 e aprovar imagens, gerar carrosséis e liberar vídeos no Flow.
 
-O projeto está em modernização incremental. Os scripts atuais continuam sendo a
-interface oficial até a criação do pacote `pipeline_flow`.
+O projeto está em modernização incremental. O pacote `pipeline_flow`, os
+scripts compatíveis e o painel web local compartilham os mesmos serviços.
 
 ## Regras de segurança
 
@@ -67,6 +67,33 @@ O comando histórico permanece compatível durante a modernização:
 ```powershell
 python scripts/rodar_pipeline.py
 ```
+
+Abrir o painel local:
+
+```powershell
+python scripts/servir_painel.py
+```
+
+O endereço padrão é `http://127.0.0.1:8765`. As consultas não alteram arquivos.
+Na seção **Operações**, preparação de pacotes, importação de respostas e
+registro de imagens exigem confirmação explícita. A seção **Revisão** permite
+aprovar ou rejeitar o frame ativo; a decisão é revalidada contra revisão e
+SHA-256, e a rejeição exige justificativa. Aprovar não inicia nem libera
+automaticamente a execução do vídeo pelo painel.
+A seção **Carrossel** reúne os cards autorizados por produção, mostra o conteúdo
+do plano e permite gerar ou gerar novamente o PNG local. A autorização
+`gerar_carrossel=sim` é independente da aprovação de vídeo; cada regeneração
+cria outro arquivo, preserva a versão anterior e não chama o Flow nem consome
+créditos.
+A seção **Vídeos** mostra o estado de cada clipe e libera somente uma geração
+paga por vez entre os processos oficiais do projeto. A ação exige imagem
+aprovada e vinculada,
+SHA-256 atual, `gflow.exe`, projeto configurado, checkbox, a frase
+`GERAR VIDEO` e confirmação final. A execução ocorre em segundo plano e pode
+consumir créditos; tentativas incertas permanecem bloqueadas para impedir
+reenvio automático. Se `preparados/.locks/video-credit.lock` permanecer após
+uma interrupção, confira `execucao.json`, `gflow.log` e o Flow antes de remover
+a trava manualmente.
 
 Listar ou operar uma produção já preparada:
 

@@ -27,7 +27,7 @@ class PackageArchitectureTest(unittest.TestCase):
             'GFLOW_PROJECT_ID=project-from-env\n'
             'PIPELINE_OUTPUT_DIR=custom-output\n'
             'PIPELINE_DELIVERY_DIR=custom-delivery\n'
-            'GFLOW_VIDEO_MODEL=veo-quality\n'
+            'GFLOW_VIDEO_MODEL=omni-flash\n'
             'GFLOW_TIMEOUT_SECONDS=45\n',
             encoding='utf-8',
         )
@@ -41,7 +41,7 @@ class PackageArchitectureTest(unittest.TestCase):
 
     def test_domain_validation_has_no_environment_dependency(self):
         self.assertEqual(domain.positive_int('12', 1, 'VALUE'), 12)
-        self.assertEqual(domain.video_model(''), 'veo-fast')
+        self.assertEqual(domain.video_model(''), 'omni-flash')
         with self.assertRaisesRegex(domain.ConfigError, 'VALUE'):
             domain.positive_int('zero', 1, 'VALUE')
 

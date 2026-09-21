@@ -908,6 +908,28 @@ O vídeo não é gerado.
 
 O fluxo deverá permitir corrigir/regenerar a imagem.
 
+## Vínculo técnico da aprovação
+
+O valor humano `aprovacao=aprovada` é necessário, mas não é suficiente para
+liberar vídeo. O executor grava em `execucao.json` um vínculo versionado que
+contém:
+
+- produção e clipe;
+- SHA-256 da resposta importada e do pacote de origem;
+- fingerprint dos planos, insumos e prompts exportados;
+- caminho canônico e SHA-256 do frame revisado;
+- data da aprovação.
+
+Antes de liberar vídeo, todos esses valores precisam corresponder à revisão
+ativa e ao arquivo atual. A resposta importada também é validada contra o hash
+usado no nome da pasta, e os planos individuais precisam corresponder ao
+conteúdo de `resposta_ia.json`.
+
+Ativar outra revisão ou registrar/gerar outra imagem revoga a aprovação
+anterior na planilha. Registros históricos de aprovação que não identificam a
+revisão deixam de autorizar vídeo e exigem uma nova revisão humana; nenhuma
+mídia histórica é apagada ou sobrescrita.
+
 Esse gate deve ser **genérico**.
 
 O conceito anterior de:
@@ -1556,8 +1578,177 @@ O executor e o renderizador de carrossel mantêm um histórico append-only em:
 Cada linha é um objeto JSON independente com `schema_version`,
 `producao_id`, `id_clipe`, `etapa`, `metodo`, `comando`, `resultado`,
 `erro`, `inicio_em` e `timestamp`. IDs de projeto e conteúdos longos do
-comando são redigidos no log estruturado. O `gflow.log` bruto continua sendo
-preservado no diretório da tentativa.
+comando são redigidos no log estruturado. Projeto e prompt também são
+redigidos de mensagens de erro. Tentativas novas não guardam a linha de
+comando em `execucao.json`: registram somente `comando_sha256`, modelo,
+chave idempotente, diretório e saída. O `gflow.log` bruto continua sendo
+preservado localmente no diretório ignorado da tentativa.
+
+## Controle de concorrência e retomada
+
+Executor e carrossel compartilham um lock exclusivo por clipe em
+`.execucao.lock`. O arquivo possui esquema versionado, token aleatório, PID,
+hostname, operação, horário e hashes da revisão. Um segundo processo não remove
+nem substitui um lock cujo proprietário continua ativo.
+
+Quando o proprietário local não existe mais, o lock órfão é movido para
+`logs/locks/` antes da criação de outro lock. Locks malformados, de versão
+desconhecida ou pertencentes a outro host falham de modo seguro e precisam ser
+inspecionados. A verificação do processo no Windows usa consulta somente leitura
+ao sistema operacional.
+
+Nova geração de vídeo também adquire a trava global
+`preparados/.locks/video-credit.lock`, compartilhada pela CLI e pelo painel.
+Ela limita a uma única operação paga entre processos. Se o processo morrer,
+essa trava não é recuperada automaticamente: como o efeito externo pode ser
+incerto, é obrigatório conferir `execucao.json`, `gflow.log` e o Flow antes da
+remoção manual. O índice de entregas e o salvamento da planilha usam locks
+próprios para evitar colisão entre clipes e processos.
+
+Cada chamada externa recebe uma `idempotency_key` determinística baseada em
+produção, clipe, etapa, modelo, revisão, pacote, fingerprint e frame inicial
+quando aplicável. A tentativa persistida distingue:
+
+- `preparada`: ainda não houve submissão; uma interrupção pode descartar essa
+  preparação e tentar novamente com a mesma chave;
+- `submetida` com saída local válida: o arquivo é promovido para o estado
+  concluído sem nova chamada ao Flow;
+- `submetida` sem saída local: o executor bloqueia novo envio e exige
+  conferência do `execucao.json`, do `gflow.log` e do Flow.
+
+Imagens e vídeos recuperados preservam a tentativa no histórico, com resultado
+`recuperada_sem_reenvio`. Saídas de imagem nunca são aceitas como resultado de
+vídeo, e todos os caminhos de tentativa precisam permanecer dentro da pasta do
+clipe.
+
+## Migração versionada de estados
+
+O comando `scripts/migrar_estados.py` moderniza `execucao.json` legados sem
+gerar mídia. Sem `--aplicar`, ele executa somente uma simulação e informa
+quais registros seriam alterados. A aplicação precisa ser solicitada
+explicitamente:
+
+``` powershell
+python scripts/migrar_estados.py
+python scripts/migrar_estados.py --producao PRODUCAO --clipe CLIPE
+python scripts/migrar_estados.py --aplicar
+```
+
+Cada aplicação adquire o mesmo `.execucao.lock` usado pelo executor, verifica o
+fingerprint da revisão e os hashes das mídias, cria um backup imutável em
+`logs/migrations/` e só então substitui o estado de forma atômica. Repetir a
+migração de um estado já atualizado não cria outro backup nem outro evento.
+
+Registros legados de imagem e vídeo recebem a versão e os hashes da revisão
+somente quando o arquivo original ainda existe e coincide com seu SHA-256.
+Aprovações legadas não são promovidas automaticamente: são preservadas em
+`aprovacoes_historicas`, removidas do vínculo ativo e, quando a revisão ainda
+está ativa na planilha, a célula de aprovação é limpa. O sistema pode revogar
+essa célula, mas nunca preenchê-la como aprovada.
+
+Tentativas antigas ou incertas não são reenviadas pela migração. Elas continuam
+sujeitas às regras conservadoras de retomada. Estados dentro de diretórios
+`antigos/` também não são reescritos automaticamente e aparecem no relatório
+como histórico preservado.
+
+## Backend local com operações confirmadas
+
+O módulo `pipeline_flow.web` oferece uma API FastAPI local que recompõe a visão
+do pipeline diretamente da planilha, das revisões importadas, dos estados de
+execução, do índice de entregas e dos logs estruturados. A consulta não mantém
+cache persistente e não grava nos arquivos de origem.
+
+A área `Operações` reutiliza os serviços existentes para preparar pacotes,
+importar respostas e registrar uma imagem pronta. Essas mutações são locais,
+exigem confirmação explícita no formulário e no cabeçalho HTTP e não chamam o
+Flow, aprovam imagens ou liberam vídeos.
+
+A área `Revisão` registra a decisão humana `aprovada` ou `rejeitada`. O backend
+reabre o clipe da revisão ativa sob o mesmo lock operacional, valida o SHA-256
+enviado pela tela contra a imagem atual e recusa decisões obsoletas com HTTP
+`409`. Aprovações gravam primeiro a planilha e depois o vínculo técnico;
+rejeições removem primeiro o vínculo técnico e exigem justificativa. Assim, uma
+falha parcial permanece fechada para vídeo. Nenhuma decisão inicia geração.
+
+O servidor é iniciado por:
+
+``` powershell
+python scripts/servir_painel.py
+```
+
+`WEB_HOST` precisa ser `localhost` ou um endereço de loopback, e `WEB_PORT`
+define a porta. Endereços como `0.0.0.0` e IPs da rede local são rejeitados.
+
+Rotas disponíveis nesta etapa:
+
+- `GET /api/health`: diagnóstico do backend;
+- `GET /api/dashboard`: totais, próximas ações e eventos recentes;
+- `GET /api/productions`: produções e revisões conhecidas;
+- `GET /api/productions/{producao_id}`: detalhe de uma produção;
+- `GET /api/clips`: clipes, estados, mídias e vínculo de aprovação;
+- `GET /api/deliveries`: índice de entregas e validade dos caminhos;
+- `GET /api/logs`: eventos operacionais, com limite entre 1 e 500.
+- `GET /api/operations`: pacotes, respostas e ZIP consolidado disponíveis;
+- `GET /api/operations/executions`: diagnóstico seguro do executor e tarefas
+  iniciadas pelo processo atual do painel, sem expor comandos;
+- `GET /api/operations/package-latest`: download do ZIP mais recente;
+- `POST /api/operations/prepare`: prepara revisões e o ZIP consolidado;
+- `POST /api/operations/import`: importa resposta já salva;
+- `POST /api/operations/import-upload`: valida, importa e preserva um JSON enviado;
+- `POST /api/operations/register-image`: registra imagem na revisão ativa;
+- `POST /api/operations/review-image`: registra aprovação ou rejeição humana
+  vinculada à revisão e ao SHA-256 esperado.
+- `POST /api/operations/generate-carousel`: gera ou regenera um card local
+  autorizado, vinculado à revisão e ao SHA-256 esperado da imagem.
+- `POST /api/operations/generate-video`: após confirmação reforçada, inicia em
+  segundo plano uma geração unitária de vídeo e responde com HTTP `202`.
+
+O backend não expõe o comando persistido em tentativas interrompidas. Caminhos
+fora das raízes configuradas são reduzidos ao nome do arquivo, e entregas fora
+de `PIPELINE_DELIVERY_DIR` são marcadas como inseguras. Estados históricos
+desconhecidos aparecem como diagnósticos associados à linha, sem esconder as
+demais linhas e sem reescrever a planilha.
+
+As rotas de escrita exigem `X-Pipeline-Confirmation: confirmar`, validam
+identificadores sem aceitar caminhos arbitrários e limitam uploads a 50 MiB
+durante o streaming. Requisições de navegador com origem externa ou contexto
+`cross-site` são bloqueadas. Imagens também têm limite explícito de pixels.
+Respostas devem ser JSON válido; imagens são verificadas pelo conteúdo e pela
+extensão. O registro usa o lock por clipe, revoga aprovação anterior e rejeita
+revisões inativas ou clipes com vídeo já concluído.
+O corpo JSON de revisão é limitado a 8 KiB; rejeições exigem justificativa de
+até 500 caracteres. A aprovação só libera o gate técnico quando planilha e
+`execucao.json` concordam sobre o frame, o hash, o pacote e a revisão.
+O corpo JSON de carrossel também é limitado a 8 KiB. A operação exige
+`gerar_carrossel=sim` e `carrossel.ativo=true`, revalida o SHA-256 da imagem
+dentro do lock do clipe e valida que a saída é um PNG 1080 x 1920 não vazio.
+Essa autorização é independente de `aprovacao` e nunca libera vídeo. Ao gerar
+novamente, o renderizador cria um nome versionado e mantém todos os arquivos
+anteriores.
+
+A liberação de vídeo usa somente a ação fixa `video` e as configurações do
+servidor (`GFLOW_ROOT`, `GFLOW_PROJECT_ID`, modelo e timeout). O navegador não
+fornece binário, argumentos, diretório, projeto, modelo nem texto de comando.
+Além de `X-Pipeline-Confirmation: confirmar`, o corpo JSON limitado a 8 KiB
+precisa conter a frase exata `GERAR VIDEO`. A interface também exige checkbox e
+diálogo final informando que pode haver consumo de créditos.
+
+Antes de criar a tarefa, o backend confirma revisão ativa, plano com
+`gerar_video=true`, ausência de vídeo ou tentativa pendente, executável e
+projeto configurados, imagem atual, `aprovacao=aprovada` e vínculo técnico em
+qualquer nova geração, mesmo se o plano trouxer um indicador divergente. O
+executor revalida novamente o SHA-256 e a aprovação dentro do lock do clipe,
+imediatamente antes de preparar a tentativa. A trava global persistente aceita
+no máximo uma geração paga por vez entre processos oficiais do projeto.
+
+O acompanhamento em memória informa fila, execução, sucesso ou falha e é
+consultado por polling somente enquanto necessário. `execucao.json`, o lock e
+`logs/eventos.jsonl` continuam sendo a fonte persistente: reiniciar o servidor
+pode limpar a lista em memória, mas não autoriza reenvio de uma tentativa
+incerta. Mensagens de timeout são resumidas, o ID do projeto é redigido e a API
+jamais retorna a linha de comando. Mídias registradas precisam permanecer na
+pasta da revisão, e entradas do índice não podem redirecionar cópias para fora
+de `PIPELINE_DELIVERY_DIR`.
 
 ------------------------------------------------------------------------
 

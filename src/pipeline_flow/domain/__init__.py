@@ -19,11 +19,7 @@ from .states import (
 )
 
 VIDEO_MODELS = (
-    'veo-fast',
-    'veo-lite',
-    'veo-quality',
     'omni-flash',
-    'veo-lite-lp',
 )
 
 
@@ -62,7 +58,7 @@ def positive_int(value: str, default: int, name: str) -> int:
 
 
 def video_model(value: str) -> str:
-    model = value or 'veo-fast'
+    model = value or 'omni-flash'
     if model not in VIDEO_MODELS:
         options = ', '.join(VIDEO_MODELS)
         raise ConfigError(f'GFLOW_VIDEO_MODEL inválido: {model}. Opções: {options}.')

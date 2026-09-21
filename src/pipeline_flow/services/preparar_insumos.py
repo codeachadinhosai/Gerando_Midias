@@ -23,6 +23,11 @@ from pipeline_flow.domain import (
     normalize_state,
     normalize_states,
 )
+from pipeline_flow.services.execution_control import (
+    LockError,
+    acquire_lock,
+    release_lock,
+)
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -122,6 +127,40 @@ def serialize_sheet(tree, original):
     result = result[:root_end] + "".join(additions) + result[root_end:]
     return ('<?xml version="1.0" encoding="utf-8"?>\n' + result).encode("utf-8")
 
+def serialized_workbook_save(method):
+    def wrapper(self, *args, **kwargs):
+        lock_path = (
+            self.path.parent
+            / 'backups'
+            / ('.' + self.path.name + '.lock')
+        )
+        try:
+            handle = acquire_lock(
+                lock_path,
+                'salvar-planilha',
+                context={'planilha': str(self.path.resolve())},
+            )
+        except LockError as exc:
+            raise Invalid(str(exc)) from exc
+        try:
+            result = method(self, *args, **kwargs)
+        except BaseException as operation_error:
+            try:
+                release_lock(handle)
+            except LockError as lock_error:
+                operation_error.add_note(
+                    f'Falha adicional ao liberar lock da planilha: {lock_error}'
+                )
+            raise
+        try:
+            release_lock(handle)
+        except LockError as exc:
+            raise Invalid(str(exc)) from exc
+        return result
+
+    return wrapper
+
+
 class Workbook:
     """Preserva partes XLSX não editadas; Controle usa linhas 1, 2, 3 e dados desde 4."""
     def __init__(self, path, allow_legacy=False):
@@ -157,8 +196,8 @@ class Workbook:
         self.legacy = actual[:len(LEGACY_HEADERS)] == LEGACY_HEADERS and not any(actual[len(LEGACY_HEADERS):])
         require(actual == HEADERS or (allow_legacy and self.legacy), f"Cabeçalhos de Controle diferentes do contrato de {len(HEADERS)} colunas. Execute corrigir-planilha.")
 
-    def records(self):
-        records = [
+    def raw_records(self):
+        return [
             {
                 **{
                     name: cols.get(column_name(i), '').strip()
@@ -169,10 +208,29 @@ class Workbook:
             for index, cols in self.rows.items()
             if index >= 4 and any(cols.values())
         ]
-        return [normalize_states(record) for record in records]
+
+    def records(self):
+        return [normalize_states(record) for record in self.raw_records()]
 
     def set(self, index, field, value):
-        require(field in HEADERS[12:] and field != "aprovacao", "Não alterar campo humano.")
+        require(field in HEADERS[12:], "Não alterar campo humano.")
+        if field == "aprovacao":
+            require(
+                str(value) == "",
+                "O sistema pode somente revogar aprovação; nunca aprová-la.",
+            )
+        self._set_cell(index, field, value)
+
+    def set_human_approval(self, index, value):
+        # Caminho reservado a uma decisão humana confirmada pela interface.
+        value = norm(value)
+        require(
+            value in {'aprovada', 'rejeitada'},
+            'Decisão humana deve ser aprovada ou rejeitada.',
+        )
+        self._set_cell(index, 'aprovacao', value)
+
+    def _set_cell(self, index, field, value):
         if field in STATE_FIELDS:
             value = normalize_state(field, value)
         data = self.tree.find("m:sheetData", NS)
@@ -268,6 +326,7 @@ class Workbook:
         self.legacy = False
         return CAROUSEL_HEADERS
 
+    @serialized_workbook_save
     def save(self):
         require(digest(self.path) == self.original_hash, "Excel mudou durante a operação. Reexecute para preservar a edição humana.")
         self.parts[self.sheet_path] = serialize_sheet(self.tree, self.parts[self.sheet_path])
@@ -317,6 +376,17 @@ def validate_revision_migration(operational):
         supplied = Path(operational.get("imagem_arquivo", "")).resolve()
         require(supplied.is_file() and supplied.suffix.lower() in IMAGE_EXT,
                 "Imagem gerada deve existir em imagem_arquivo para migrar a revisao.")
+
+
+def same_plan_revision(operational, plan_path):
+    current = operational.get('plano_arquivo')
+    if not current:
+        return False
+    try:
+        return Path(current).resolve() == Path(plan_path).resolve()
+    except (OSError, TypeError, ValueError):
+        return False
+
 
 def prepare(root, sheet, roots, output_dir=None):
     root, sheet = Path(root), Path(sheet)
@@ -679,8 +749,11 @@ def import_response(root, package, response_file, update_excel=False, output_dir
         try:
             for item in manifest["clipes"]:
                 cid = item["id_clipe"]; p = plans[cid]["plano"]; row = item["linha"]
-                fields = {"plano_arquivo":str(dest/cid/"plano_clipe.json"),"atualizado_em":now(),
+                plan_path = dest/cid/"plano_clipe.json"
+                fields = {"plano_arquivo":str(plan_path),"atualizado_em":now(),
                           "fala_audio":p.get("audio", {}).get("fala_exata", "") if p.get("audio", {}).get("ativo") else ""}
+                if not same_plan_revision(current[row], plan_path):
+                    fields["aprovacao"] = ""
                 carousel = p.get("carrossel") if isinstance(p.get("carrossel"), dict) else {}
                 fields.update(texto_carrossel=carousel.get("texto", ""),
                               subtexto_carrossel=carousel.get("subtexto", ""),

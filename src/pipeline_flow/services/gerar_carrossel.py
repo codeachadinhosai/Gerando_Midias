@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
+import uuid
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont, ImageOps
 
@@ -18,6 +19,10 @@ SIDE, TOP, BOTTOM = 96, 160, 220
 WINE = (143, 50, 76, 238)
 CREAM = (255, 248, 239, 255)
 INK = (91, 35, 51, 255)
+
+
+class CarouselConflict(Invalid):
+    pass
 
 
 def font_path(*names):
@@ -79,6 +84,21 @@ def cover(source):
     return resized.crop((left, top, left + WIDTH, top + HEIGHT))
 
 
+def validate_rendered_card(path):
+    path = Path(path)
+    require(path.is_file() and path.stat().st_size > 0, 'Card local ausente ou vazio.')
+    try:
+        with Image.open(path) as image:
+            require(
+                image.format == 'PNG' and image.size == (WIDTH, HEIGHT),
+                'Card local existente nao corresponde ao formato 9:16 esperado.',
+            )
+            image.verify()
+    except (OSError, ValueError) as exc:
+        raise Invalid('Card local existente esta corrompido.') from exc
+    return path
+
+
 
 def render(source, destination, carousel, papel="principal"):
     require(len(carousel["texto"]) <= 52, "texto_carrossel excede 52 caracteres.")
@@ -136,11 +156,18 @@ def render(source, destination, carousel, papel="principal"):
 
 def carousel_frame(clip, row, state):
     require(norm(row["gerar_carrossel"]) == "sim", "Carrossel nao autorizado na planilha.")
-    frame = flow.media(state["imagem"]) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
+    frame = flow.media(state["imagem"], clip) if state.get("imagem") else flow.existing(clip, "frame_existente_ref_id")
     return frame
 
 
-def _generate(clip, sheet, delivery_dir=None):
+def _generate(
+    clip,
+    sheet,
+    delivery_dir=None,
+    *,
+    expected_image_sha256=None,
+    force=False,
+):
     carousel = clip["plan"].get("carrossel")
     require(
         isinstance(carousel, dict) and carousel.get("ativo") is True,
@@ -151,6 +178,13 @@ def _generate(clip, sheet, delivery_dir=None):
     wb = Workbook(sheet)
     row = flow.row_for(wb, clip)
     frame = carousel_frame(clip, row, state)
+    frame_hash = digest(frame)
+    if expected_image_sha256 is not None:
+        flow.require_sha256(expected_image_sha256, 'imagem_sha256 esperada')
+        if frame_hash != expected_image_sha256:
+            raise CarouselConflict(
+                'A imagem mudou desde que a galeria foi carregada. Atualize os dados antes de gerar o card.'
+            )
 
     print(
         f"[carrossel] ordem={row['ordem']} "
@@ -175,8 +209,20 @@ def _generate(clip, sheet, delivery_dir=None):
 
     papel = norm(row.get("papel_na_producao", ""))
 
+    destination = destination.resolve()
+    try:
+        destination.relative_to(delivery_dir)
+    except ValueError as exc:
+        raise Invalid('Destino do carrossel fora da pasta de entregas.') from exc
+
+    if force and destination.exists():
+        destination = destination.with_name(
+            destination.stem + '_' + uuid.uuid4().hex + destination.suffix
+        )
+
     if not destination.is_file():
         render(frame, destination, carousel, papel=papel)
+    validate_rendered_card(destination)
 
     state["carrossel"] = {
         "arquivo": str(destination),
@@ -204,10 +250,27 @@ def _generate(clip, sheet, delivery_dir=None):
     return destination
 
 
-def generate(clip, sheet, delivery_dir=None):
+def generate(
+    clip,
+    sheet,
+    delivery_dir=None,
+    *,
+    expected_image_sha256=None,
+    force=False,
+):
     started_at = now()
     try:
-        destination = _generate(clip, sheet, delivery_dir)
+        lock_handle = flow.acquire_clip_lock(clip, 'carrossel')
+        try:
+            destination = _generate(
+                clip,
+                sheet,
+                delivery_dir,
+                expected_image_sha256=expected_image_sha256,
+                force=force,
+            )
+        finally:
+            flow.release_lock(lock_handle)
     except Exception as exc:
         try:
             record_clip_event(

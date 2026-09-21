@@ -14,7 +14,11 @@ from pipeline_flow.domain import (
 )
 from pipeline_flow.domain.events import OperationalEvent
 from pipeline_flow.services import gerar_carrossel as carousel
-from pipeline_flow.services.operational_log import append_event, sanitize_command
+from pipeline_flow.services.operational_log import (
+    append_event,
+    sanitize_command,
+    sanitize_error,
+)
 
 
 class OperationalStatesTest(unittest.TestCase):
@@ -36,6 +40,28 @@ class OperationalStatesTest(unittest.TestCase):
 
 
 class OperationalLogTest(unittest.TestCase):
+    def test_error_redacts_project_and_prompt_from_timeout_text(self):
+        command = [
+            'gflow.exe',
+            'video',
+            'i2v',
+            '--initial-frame',
+            'frame.png',
+            'prompt privado curto',
+            '--aspect',
+            '9:16',
+            '--project',
+            'project-secret',
+        ]
+        error = sanitize_error(
+            'Command prompt privado curto project-secret timed out',
+            command,
+        )
+
+        self.assertNotIn('prompt privado curto', error)
+        self.assertNotIn('project-secret', error)
+        self.assertEqual(error.count('<redigido>'), 2)
+
     def test_jsonl_event_has_required_fields_and_redacts_command(self):
         command = sanitize_command([
             'gflow.exe',
@@ -76,6 +102,9 @@ class OperationalLogTest(unittest.TestCase):
             folder = Path(tmp)
             clip = {
                 'folder': folder,
+                'fingerprint': 'a' * 64,
+                'revision_sha256': 'b' * 64,
+                'flow': {'pacote_sha256': 'c' * 64},
                 'plan': {'producao_id': 'PROD_01', 'id_clipe': 'PROD_01_01'},
             }
             destination = folder / 'card.png'
@@ -91,6 +120,7 @@ class OperationalLogTest(unittest.TestCase):
                 .read_text(encoding='utf-8')
                 .splitlines()
             ]
+            self.assertFalse((folder / '.execucao.lock').exists())
 
         self.assertEqual([event['resultado'] for event in events], ['gerado', 'erro'])
         self.assertEqual(events[1]['erro'], 'falha local')

@@ -28,7 +28,7 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertEqual(config.spreadsheet, self.root / 'entradas/controle_pipeline_flow.xlsx')
         self.assertEqual(config.output_dir, self.root / 'preparados')
         self.assertEqual(config.delivery_dir, self.root / 'entregas_flow')
-        self.assertEqual(config.video_model, 'veo-fast')
+        self.assertEqual(config.video_model, 'omni-flash')
         self.assertEqual(config.timeout_seconds, 1800)
         self.assertEqual(config.web_host, '127.0.0.1')
         self.assertEqual(config.web_port, 8765)
@@ -40,7 +40,7 @@ class PipelineConfigTest(unittest.TestCase):
             'PIPELINE_SPREADSHEET=local/control.xlsx\n'
             'PIPELINE_OUTPUT_DIR=work\n'
             'PIPELINE_DELIVERY_DIR=delivery\n'
-            'GFLOW_VIDEO_MODEL=veo-quality\n'
+            'GFLOW_VIDEO_MODEL=omni-flash\n'
             'GFLOW_TIMEOUT_SECONDS=42\n'
         )
         config = pipeline_config.load_config(self.root, environ={})
@@ -48,7 +48,7 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertEqual(config.spreadsheet, self.root / 'local/control.xlsx')
         self.assertEqual(config.output_dir, self.root / 'work')
         self.assertEqual(config.delivery_dir, self.root / 'delivery')
-        self.assertEqual(config.video_model, 'veo-quality')
+        self.assertEqual(config.video_model, 'omni-flash')
         self.assertEqual(config.timeout_seconds, 42)
 
     def test_process_environment_overrides_dotenv(self):
@@ -87,6 +87,7 @@ class PipelineConfigTest(unittest.TestCase):
             ({'GFLOW_TIMEOUT_SECONDS': 'zero'}, 'GFLOW_TIMEOUT_SECONDS'),
             ({'WEB_PORT': '0'}, 'WEB_PORT'),
             ({'GFLOW_VIDEO_MODEL': 'unknown'}, 'GFLOW_VIDEO_MODEL'),
+            ({'GFLOW_VIDEO_MODEL': 'veo-fast'}, 'GFLOW_VIDEO_MODEL'),
         )
         for environ, expected in cases:
             with self.subTest(environ=environ), self.assertRaisesRegex(
@@ -113,7 +114,7 @@ def fake_config(root):
         delivery_dir=root / 'configured-delivery',
         gflow_root=root / 'configured-gflow',
         project_id='configured-project',
-        video_model='veo-lite',
+        video_model='omni-flash',
         timeout_seconds=321,
         web_host='127.0.0.1',
         web_port=8765,

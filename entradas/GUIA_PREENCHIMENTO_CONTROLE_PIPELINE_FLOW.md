@@ -18,17 +18,15 @@ python scripts/rodar_pipeline.py --projeto ID_DO_PROJETO_FLOW
 ```
 Exemplo:
 ```powershell
-python scripts/rodar_pipeline.py --projeto afdedea7-dcc2-484c-98ab-6a93016cdec3
+python scripts/rodar_pipeline.py --projeto SEU_ID_DO_PROJETO_FLOW
 ```
-O executor lê a planilha e retoma todas as produções ativas. Ele prepara pacotes novos, importa automaticamente uma `resposta_ia.json` cujo `pacote_sha256` corresponda ao pacote, gera todas as imagens pendentes, vincula aprovações já registradas no Excel e gera todos os vídeos liberados. Etapas concluídas não são reenviadas.
+O executor lê a planilha e retoma todas as produções ativas. Ele prepara pacotes novos, importa automaticamente uma `resposta_ia.json` cujo `pacote_sha256` corresponda ao pacote, gera todas as imagens pendentes, vincula aprovações válidas para a revisão ativa e gera todos os vídeos liberados. Etapas concluídas não são reenviadas.
 
-Quando uma imagem acaba de ser gerada ou registrada, o comando para aquele clipe em `aguardando revisao e aprovacao humana da imagem`. Abra `imagem_arquivo`, revise, marque `aprovacao=aprovada`, salve e feche o Excel. Execute o mesmo comando novamente; ele vincula a aprovação ao hash da imagem e gera os vídeos pendentes.
+Quando uma imagem acaba de ser gerada ou registrada, o comando para aquele clipe em `aguardando revisao e aprovacao humana da imagem`. Abra `imagem_arquivo`, revise, marque `aprovacao=aprovada`, salve e feche o Excel. Execute o mesmo comando novamente; ele vincula a aprovação ao arquivo, ao hash da imagem e à revisão importada antes de gerar os vídeos pendentes.
 
 Se você informou uma imagem própria em `imagem_arquivo`, o executor a copia e registra automaticamente quando o clipe ainda não possui imagem no `execucao.json`. Não substitui vídeo já concluído.
 
-Ao importar uma nova revisão, uma linha com `imagem_status=gerada` pode ser migrada quando `imagem_arquivo` aponta para uma imagem existente e ainda não há vídeo concluído. O novo plano é ativado, e na execução seguinte essa imagem é copiada para a pasta versionada da nova revisão por `registrar-imagem`; nenhuma nova imagem é solicitada ao Flow. Etapas marcadas como `gerando` e vídeos gerados ou reutilizados continuam bloqueando a troca de revisão.
-
-Ao importar uma nova revisão, uma linha com `imagem_status=gerada` pode ser migrada quando `imagem_arquivo` aponta para uma imagem existente e ainda não há vídeo concluído. O novo plano é ativado, e na execução seguinte essa imagem é copiada para a pasta versionada da nova revisão por `registrar-imagem`; nenhuma nova imagem é solicitada ao Flow. Etapas marcadas como `gerando` e vídeos gerados ou reutilizados continuam bloqueando a troca de revisão.
+Ao importar uma nova revisão, uma linha com `imagem_status=gerada` pode ser migrada quando `imagem_arquivo` aponta para uma imagem existente e ainda não há vídeo concluído. O novo plano é ativado, a coluna `aprovacao` é limpa e, na execução seguinte, a imagem é copiada para a pasta versionada da nova revisão por `registrar-imagem`; nenhuma nova imagem é solicitada ao Flow. Revise o frame novamente e registre uma nova aprovação. Etapas marcadas como `gerando` e vídeos gerados ou reutilizados continuam bloqueando a troca de revisão.
 
 A classificação visual continua sendo feita pela IA. Quando houver pacote novo sem uma resposta correspondente em `preparados/respostas_ia/`, o relatório indicará `pacote novo sem resposta_ia correspondente` e preservará essa produção sem gerar mídia. O resultado completo de cada execução fica em `preparados/ultima_execucao_automatica.json`.
 
@@ -42,7 +40,7 @@ python scripts/rodar_pipeline.py --sem-preparar --projeto ID_DO_PROJETO_FLOW
 Coloque os arquivos em `entradas/` e preencha `entradas/controle_pipeline_flow.xlsx`. Cada linha com `classifica=sim` Ã© um clipe. Preencha os campos humanos descritos neste guia. No contrato 2.3, `arquivo` Ã© a imagem-base; em `instrucao`, diga o que preservar, alterar e nÃ£o copiar, inclusive a expansÃ£o para 9:16.
 
 ```powershell
-cd D:\04_APPs\Achadinhos_criativos\01_gflow-videos\prompts
+cd D:\caminho\para\prompts
 python scripts/preparar_insumos.py preparar
 ```
 
@@ -94,8 +92,8 @@ python scripts/preparar_insumos.py importar --pacote $Pacote --resposta $Respost
 Exemplo real da produÃ§Ã£o de waffle:
 
 ```powershell
-$Pacote = (Resolve-Path 'preparados/pacotes/WAFFLE_VIDEO_01/5d0909cb05bc7fbd').Path
-$Resposta = (Resolve-Path 'preparados/respostas_ia/WAFFLE_VIDEO_01_5d0909cb05bc7fbd.json').Path
+$Pacote = (Resolve-Path 'preparados/pacotes/PRODUCAO/REVISAO').Path
+$Resposta = (Resolve-Path 'preparados/respostas_ia/PRODUCAO_REVISAO_resposta_ia.json').Path
 python scripts/preparar_insumos.py importar --pacote $Pacote --resposta $Resposta --atualizar-excel
 ```
 
@@ -127,7 +125,7 @@ python scripts/executar_flow.py listar --producao $Producao
 No exemplo atual, a importaÃ§Ã£o retornou:
 
 ```powershell
-$Producao = (Resolve-Path 'preparados/flow/WAFFLE_VIDEO_01/6e4ffaf8f4d87925').Path
+$Producao = (Resolve-Path 'preparados/flow/PRODUCAO/REVISAO').Path
 python scripts/executar_flow.py listar --producao $Producao
 ```
 
@@ -194,10 +192,10 @@ O comando nÃ£o decide por vocÃª; vincula a aprovaÃ§Ã£o ao caminho e SHA-
 Este comando pode consumir crÃ©ditos:
 
 ```powershell
-python scripts/executar_flow.py video --producao $Producao --clipe ID_DO_CLIPE --projeto $ProjetoFlow --modelo-video veo-fast
+python scripts/executar_flow.py video --producao $Producao --clipe ID_DO_CLIPE --projeto $ProjetoFlow --modelo-video omni-flash
 ```
 
-TambÃ©m aceita `veo-lite`, `veo-quality`, `omni-flash` e `veo-lite-lp`. O contrato atual usa 9:16 e oito segundos. Ao concluir, revise o MP4 e confira no Excel `video_status=gerado`, `video_arquivo` e `status=concluido`. Repita as etapas 4â€“6 para cada clipe.
+O projeto aceita somente `omni-flash` para gerar vídeos. O contrato atual usa 9:16 e oito segundos. Ao concluir, revise o MP4 e confira no Excel `video_status=gerado`, `video_arquivo` e `status=concluido`. Repita as etapas 4â€“6 para cada clipe.
 
 ```powershell
 python scripts/executar_flow.py listar --producao $Producao
@@ -208,11 +206,43 @@ O executor gera vÃ­deos individuais; ainda nÃ£o os concatena. Monte-os em um
 ### Retomada e diagnÃ³stico
 
 - Repetir etapa concluÃ­da sincroniza o Excel sem gerar novamente.
-- Em falha ou timeout, confira `execucao.json`, `gflow.log` e o Flow; a chamada pode ter consumido crÃ©ditos.
-- O executor nÃ£o reenvia tentativa incerta automaticamente.
-- Remova `.execucao.lock` somente apÃ³s confirmar que nÃ£o hÃ¡ processo.
-- NÃ£o altere planos, prompts ou referÃªncias e nÃ£o misture revisÃµes.
-- Recortes e montagem final ainda nÃ£o sÃ£o automatizados.
+- Cada envio recebe uma `idempotency_key` determinística, registrada em
+  `execucao.json` e copiada para o ativo concluído.
+- Se a interrupção ocorreu antes da submissão, a preparação incompleta é
+  descartada e refeita com a mesma chave.
+- Se a tentativa já foi submetida e existe uma única saída local válida, o
+  executor recupera o arquivo sem fazer outra chamada ao Flow.
+- Tentativa submetida sem saída local continua bloqueada. Confira
+  `execucao.json`, `gflow.log` e o Flow; a chamada pode ter consumido
+  créditos.
+- `.execucao.lock` agora identifica PID, host, operação e revisão. Locks
+  locais órfãos são arquivados automaticamente em `logs/locks/`.
+- Não remova manualmente um lock ativo, malformado ou pertencente a outro host;
+  inspecione o arquivo e confirme o processo primeiro.
+- Não altere planos, prompts ou referências e não misture revisões.
+- Recortes e montagem final ainda não são automatizados.
+
+### Migrar estados antigos
+
+Primeiro execute a simulação, que é somente leitura:
+
+``` powershell
+python scripts/migrar_estados.py
+```
+
+Confira `estados_pendentes`, `erros` e a lista de alterações. Para limitar
+a conferência, use `--producao PRODUCAO` e/ou `--clipe CLIPE`. Somente
+depois da revisão aplique:
+
+``` powershell
+python scripts/migrar_estados.py --aplicar
+```
+
+A aplicação não chama o Flow nem substitui mídia. Ela valida os hashes, usa o
+lock do clipe, cria backup em `logs/migrations/` e atualiza
+`execucao.json` atomicamente. Aprovação legada é arquivada e precisa ser feita
+novamente; o sistema apenas limpa a aprovação da planilha, nunca aprova em nome
+da pessoa. Estados arquivados em `antigos/` permanecem intocados.
 
 ```powershell
 python scripts/preparar_insumos.py corrigir-planilha
@@ -831,6 +861,17 @@ reaproveitamentos de material pronto.
 
 O gerador de vÃ­deo nÃ£o deve avanÃ§ar sobre um clipe que exige aprovaÃ§Ã£o
 enquanto `aprovacao` nÃ£o estiver como `aprovada`.
+
+Além do valor na planilha, o comando `aprovar` grava um vínculo técnico
+em `execucao.json`. Esse registro identifica produção, clipe, revisão da
+resposta, pacote, fingerprint operacional, caminho e SHA-256 do frame. O vídeo
+só é liberado quando todos esses dados continuam correspondendo ao arquivo e à
+revisão ativos.
+
+Uma nova revisão ou uma nova imagem limpa a aprovação da planilha. Aprovações
+históricas que guardavam somente caminho e hash não são convertidas
+automaticamente: abra o frame, revise-o e execute novamente o gate humano. Essa
+regra bloqueia o vídeo, mas não apaga imagens, vídeos ou revisões anteriores.
 
 ------------------------------------------------------------------------
 

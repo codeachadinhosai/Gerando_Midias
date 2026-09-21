@@ -28,6 +28,27 @@ def sanitize_command(command: Iterable[object] | None) -> tuple[str, ...]:
     return tuple(sanitized)
 
 
+def sanitize_error(
+    error: object,
+    command: Iterable[object] | None = None,
+) -> str:
+    text = str(error or '')
+    items = [str(item) for item in command or ()]
+    sensitive = []
+    if '--project' in items:
+        index = items.index('--project') + 1
+        if index < len(items):
+            sensitive.append(items[index])
+    if '--aspect' in items:
+        index = items.index('--aspect') - 1
+        if index >= 0:
+            sensitive.append(items[index])
+    for value in sensitive:
+        if value:
+            text = text.replace(value, '<redigido>')
+    return text[:2000]
+
+
 def append_event(path: Path, event: OperationalEvent) -> Path:
     '''Acrescenta uma linha JSON completa e força sua persistência em disco.'''
     path = Path(path)
@@ -57,7 +78,7 @@ def record_clip_event(
         stage=stage,
         method=method,
         result=result,
-        error=error,
+        error=sanitize_error(error, command),
         started_at=started_at,
         timestamp=timestamp,
         command=sanitize_command(command),
