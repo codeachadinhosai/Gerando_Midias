@@ -255,7 +255,9 @@ vídeo e erro.
 
 ## 9. Documentação final
 
-- `README.md`: instalação e primeiro uso;
+- `README.md`: instalação e primeiro uso, incluindo clonagem, entrada na pasta,
+  criação de ambiente virtual compatível com Python 3.11 ou superior e
+  instalação das dependências;
 - `docs/ARQUITETURA.md`: componentes e dependências;
 - `docs/FLUXO_OPERACIONAL.md`: jornada completa;
 - `docs/CONFIGURACAO.md`: variáveis do ambiente;
@@ -263,6 +265,29 @@ vídeo e erro.
 - `docs/IA_E_CLASSIFICACAO.md`: ZIP, contrato, hashes e respostas;
 - `docs/SOLUCAO_DE_PROBLEMAS.md`: erros e recuperação;
 - `docs/adr/`: decisões arquiteturais relevantes.
+
+O primeiro uso deve permitir que uma pessoa parta de um clone limpo sem
+depender de conhecimento transmitido fora do repositório. A documentação deve:
+
+- explicar como copiar `exemplos/controle_pipeline_flow.modelo.xlsx` para
+  `entradas/controle_pipeline_flow.xlsx` sem versionar a planilha operacional;
+- distinguir comandos PowerShell de valores que devem ser escritos no `.env`;
+- documentar onde obter o `gflow`, a localização esperada de `gflow.exe` e como
+  preencher `GFLOW_ROOT` e `GFLOW_PROJECT_ID`;
+- deixar explícito que vídeo usa somente `omni-flash` e pode consumir créditos;
+- orientar a classificação manual pela IA, a importação da resposta, a revisão
+  humana e a primeira execução segura pelo painel;
+- incluir um diagnóstico inicial que confira Python, dependências, `.env`,
+  planilha, diretórios graváveis e presença do `gflow.exe`, sem executar geração;
+- informar plataformas e versões de Python suportadas;
+- explicar quais dados, mídias e segredos nunca devem ser enviados ao Git.
+
+Antes da distribuição para terceiros, também devem ser definidos e publicados:
+
+- uma licença explícita, escolhida pela titular do projeto;
+- descrição e tópicos do repositório no GitHub;
+- política de suporte, atualização de dependências e compatibilidade;
+- notas de versão e instruções de atualização para a `v1.0.0`.
 
 ## 10. Testes e integração contínua
 
@@ -279,12 +304,25 @@ Casos obrigatórios:
 - entregas são idempotentes;
 - carrossel respeita limites;
 - testes nunca chamam o Flow real.
+- clone limpo instala o projeto com o comando documentado;
+- comandos de ajuda e diagnóstico funcionam sem dados privados;
+- smoke test do painel usa somente requisições de leitura;
+- CI não exige segredos nem chama o Flow real;
+- exemplos sanitizados são suficientes para validar o primeiro uso sem
+  produções históricas.
 
 Pipeline Git:
 
 ```text
 instalar → lint → testes → validar contratos → smoke test web
 ```
+
+A matriz de CI deve executar em Windows, nas versões mínima e corrente de
+Python suportadas, e incluir instalação do pacote, Ruff, suíte completa,
+compilação dos módulos, validação dos exemplos e smoke test somente leitura. A
+estratégia de pinagem ou arquivo de restrições deve ser definida antes da
+`v1.0.0` para tornar as instalações reproduzíveis sem congelar dependências de
+forma incompatível com a manutenção do projeto.
 
 ## 11. Fases
 
@@ -352,15 +390,36 @@ A liberação unitária de vídeo, a execução em segundo plano e o acompanhame
 também estão implementados. A auditoria de segurança, caminhos, comandos,
 concorrência e trava de créditos foi concluída com regressões específicas.
 
-### Fase 6 — Acabamento
+### Fase 6 — Acabamento e distribuição
 
 Acessibilidade, responsividade, documentação, comando único, CI e release
 `v1.0.0`.
 
+Entregáveis restantes:
+
+- reescrever o início do README como roteiro executável de primeiro uso;
+- documentar a criação da planilha operacional a partir do modelo sanitizado;
+- documentar obtenção, instalação e validação do `gflow.exe`;
+- criar diagnóstico seguro de configuração, sem geração nem consumo de créditos;
+- consolidar configuração, planilha, classificação por IA e atualização em
+  documentos próprios, mantendo o README curto;
+- escolher e adicionar a licença do projeto;
+- completar descrição, tópicos e instruções de suporte do repositório;
+- configurar GitHub Actions para instalação limpa, Ruff, testes, contratos e
+  smoke test web somente leitura;
+- definir a estratégia de dependências reproduzíveis e a matriz de Python;
+- executar teste de aceitação com uma pessoa partindo de um clone limpo;
+- preparar notas de versão, auditoria final, tag e release `v1.0.0`.
+
+Critério: uma pessoa com acesso autorizado ao Flow consegue clonar, instalar,
+configurar, validar e executar o primeiro fluxo seguindo apenas a documentação;
+a CI reproduz as verificações sem segredos, dados reais ou chamadas pagas; e a
+licença e as condições de suporte estão explícitas.
+
 Status: em andamento. O refinamento de acessibilidade, responsividade e
 experiência visual foi concluído sem alterar os fluxos operacionais. Restam a
-consolidação da documentação final, a configuração de CI e a auditoria de
-release.
+consolidação do primeiro uso, o diagnóstico de configuração, a licença, a
+configuração de CI, o teste de aceitação em clone limpo e a auditoria de release.
 
 ## 12. Modelo recomendado
 
@@ -379,9 +438,11 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Consolidar a documentação final e a solução de problemas da Fase 6. A
-configuração de CI, publicação em remoto, release e tag continuam atividades
-separadas.
+Consolidar o roteiro de primeiro uso da Fase 6: clonagem, ambiente virtual,
+instalação, criação da planilha operacional, preenchimento do `.env`, instalação
+do `gflow`, classificação pela IA e primeira execução segura. O diagnóstico de
+configuração, a escolha da licença, a CI, o teste de aceitação e o release
+continuam atividades separadas, cada uma com gate próprio.
 
 Já concluído nesta fase:
 
@@ -401,6 +462,27 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-21 - Auditoria de primeiro uso e distribuição
+
+O projeto público foi avaliado a partir da perspectiva de uma pessoa sem acesso
+ao histórico local. A instalação documentada foi reproduzida em clone limpo: o
+pacote e as dependências foram instalados, a wheel foi construída e a CLI
+principal exibiu ajuda fora da pasta do repositório.
+
+Foram incorporadas à Fase 6 as lacunas encontradas: roteiro de clonagem e
+instalação para Python 3.11+, criação da planilha a partir do modelo, distinção
+entre comandos e valores do `.env`, obtenção e validação do `gflow.exe`,
+diagnóstico seguro, licença, metadados do GitHub, política de suporte, CI em
+Windows, dependências reproduzíveis, teste de aceitação e release `v1.0.0`.
+
+Decisão: o projeto está tecnicamente instalável, mas a Fase 6 somente poderá ser
+concluída quando uma pessoa autorizada conseguir executar o primeiro fluxo a
+partir de um clone limpo usando apenas a documentação. A escolha da licença
+permanece decisão da titular e não deve ser presumida pelo agente.
+
+Próxima ação: consolidar o roteiro de primeiro uso sob gate `low`, sem alterar
+comportamento; qualquer diagnóstico novo em código exige novo gate `medium`.
 
 ### 2026-09-21 - Auditoria Git e portabilidade dos testes
 
@@ -1410,8 +1492,12 @@ ou acima, basta confirmar a configuração atual, sem pedir redução.
 | 5 | Implementar liberação de vídeo, execução de comandos e acompanhamento | GPT-5.6 Sol high | surgir novo comando, nova permissão ou nova forma de consumir créditos |
 | 5 — auditoria | Auditar segurança, caminhos, comandos, concorrência e trava de créditos | GPT-5.6 Sol high | o escopo da auditoria mudar ou uma correção estrutural virar nova atividade |
 | 6 | Refinar acessibilidade, responsividade e experiência visual | GPT-5.6 Sol medium | o trabalho deixar de ser acabamento e alterar fluxos operacionais |
+| 6 | Consolidar roteiro de primeiro uso, planilha-modelo, `.env`, pré-requisito do `gflow` e suporte | GPT-5.6 Sol low | a documentação exigir novo comando, validação executável ou mudança de contrato |
 | 6 | Consolidar documentação final e solução de problemas | GPT-5.6 Sol low | a documentação exigir mudança de código ou contrato |
+| 6 | Definir licença, metadados do repositório e política de distribuição | GPT-5.6 Sol low | houver publicação externa, mudança de acesso ou decisão jurídica não fornecida pela titular |
+| 6 | Criar diagnóstico seguro de configuração e testes de primeiro uso | GPT-5.6 Sol medium | o diagnóstico passar a alterar arquivos, executar o Flow ou tratar segredos |
 | 6 | Configurar CI e validar instalação, lint, testes, contratos e smoke web | GPT-5.6 Sol medium | a CI precisar de segredos, publicação ou mudança de permissões |
+| 6 | Executar aceitação a partir de clone limpo com uma pessoa usuária | GPT-5.6 Sol medium | o teste passar a usar produção real, consumir créditos ou exigir mudança de comportamento |
 | 6 | Fazer auditoria final, preparar release, tag e `v1.0.0` | GPT-5.6 Sol high | antes de publicar em remoto ou distribuir artefatos fora do projeto |
 
 ### Aplicação obrigatória da mensagem
