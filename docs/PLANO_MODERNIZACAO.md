@@ -395,14 +395,18 @@ concorrência e trava de créditos foi concluída com regressões específicas.
 Acessibilidade, responsividade, documentação, comando único, CI e release
 `v1.0.0`.
 
-Entregáveis restantes:
+Entregáveis concluídos nesta parte:
 
 - reescrever o início do README como roteiro executável de primeiro uso;
 - documentar a criação da planilha operacional a partir do modelo sanitizado;
 - documentar obtenção, instalação e validação do `gflow.exe`;
+- criar os guias de primeiro uso e configuração, mantendo o README curto.
+
+Entregáveis restantes:
+
 - criar diagnóstico seguro de configuração, sem geração nem consumo de créditos;
-- consolidar configuração, planilha, classificação por IA e atualização em
-  documentos próprios, mantendo o README curto;
+- consolidar planilha, classificação por IA e atualização em documentos
+  próprios;
 - escolher e adicionar a licença do projeto;
 - completar descrição, tópicos e instruções de suporte do repositório;
 - configurar GitHub Actions para instalação limpa, Ruff, testes, contratos e
@@ -417,9 +421,10 @@ a CI reproduz as verificações sem segredos, dados reais ou chamadas pagas; e a
 licença e as condições de suporte estão explícitas.
 
 Status: em andamento. O refinamento de acessibilidade, responsividade e
-experiência visual foi concluído sem alterar os fluxos operacionais. Restam a
-consolidação do primeiro uso, o diagnóstico de configuração, a licença, a
-configuração de CI, o teste de aceitação em clone limpo e a auditoria de release.
+experiência visual e o roteiro de primeiro uso foram concluídos sem alterar os
+fluxos operacionais. Restam os documentos dedicados de planilha e classificação
+por IA, o diagnóstico de configuração, a licença, a configuração de CI, o teste
+de aceitação em clone limpo e a auditoria de release.
 
 ## 12. Modelo recomendado
 
@@ -438,9 +443,8 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Consolidar o roteiro de primeiro uso da Fase 6: clonagem, ambiente virtual,
-instalação, criação da planilha operacional, preenchimento do `.env`, instalação
-do `gflow`, classificação pela IA e primeira execução segura. O diagnóstico de
+Consolidar os documentos dedicados da planilha e da classificação por IA,
+reduzindo a dependência dos guias históricos em `entradas/`. O diagnóstico de
 configuração, a escolha da licença, a CI, o teste de aceitação e o release
 continuam atividades separadas, cada uma com gate próprio.
 
@@ -462,6 +466,31 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-21 - Roteiro de primeiro uso da Fase 6
+
+O primeiro uso foi consolidado sem alterar o comportamento do pipeline:
+
+- o README agora começa pelo clone, ambiente virtual, instalação, criação do
+  `.env` e cópia da planilha-modelo;
+- criado `docs/PRIMEIRO_USO.md` com preparação, classificação, importação,
+  painel e limite seguro antes de chamadas pagas;
+- criado `docs/CONFIGURACAO.md` com precedência, variáveis, caminhos,
+  compatibilidade e verificações sem geração;
+- documentado que o `gflow` é externo e que o executável deve existir em
+  `<GFLOW_ROOT>/.venv/Scripts/gflow.exe`;
+- explicitado que `python -m pipeline_flow` pode alcançar gerações quando já
+  existem planos e aprovações válidas, enquanto `gerar_imagens.py` sem
+  `--executar` é somente simulação;
+- confirmado pelo `.gitignore` que `.env`, planilha operacional, identidade,
+  preparados e entregas permanecem locais.
+
+Verificação: comandos `--help` das CLIs de preparação, execução, imagens e
+painel passaram sem chamar o Flow. Não foram usados dados reais nem consumidos
+créditos.
+
+Próxima ação: consolidar `docs/PLANILHA.md` e
+`docs/IA_E_CLASSIFICACAO.md` sob novo gate `low`.
 
 ### 2026-09-21 - Auditoria de primeiro uso e distribuição
 

@@ -21,29 +21,49 @@ a arquitetura.
 ## Requisitos
 
 - Windows com PowerShell;
+- Git;
 - Python 3.11 ou superior;
-- gflow instalado em uma pasta irmã ou indicado por `--gflow-raiz`;
-- Pillow para renderização dos carrosséis.
+- acesso ao Flow e ao identificador do projeto usado nas gerações;
+- `gflow` externo, necessário apenas para gerar imagens ou vídeos.
 
-## Instalação para desenvolvimento
+O `gflow` não é distribuído neste repositório. Obtenha-o com a pessoa
+responsável pelo ambiente e confirme que existe:
+
+```text
+<GFLOW_ROOT>\.venv\Scripts\gflow.exe
+```
+
+Preparação de pacotes, classificação, importação, revisão e carrosséis locais
+podem ser organizados antes de configurar o executável externo.
+
+## Primeiro uso
+
+No PowerShell:
 
 ```powershell
-py -3.13 -m venv .venv
+git clone https://github.com/codeachadinhosai/Gerando_Midias.git
+Set-Location Gerando_Midias
+py --version
+py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -e .[dev]
+python -m pip install -e ".[dev]"
 Copy-Item .env.example .env
+Copy-Item exemplos\controle_pipeline_flow.modelo.xlsx entradas\controle_pipeline_flow.xlsx
 ```
 
-Os scripts carregam automaticamente o `.env` da raiz. Preencha
-`GFLOW_PROJECT_ID` uma vez para não precisar repetir o projeto nos comandos.
-Durante a transição, `GFLOW_CLI_DEFAULT_PROJECT` continua aceito. A precedência
-é: argumento explícito da CLI, variável do processo, valor do `.env` e padrão
-seguro.
+Edite o arquivo `.env`; as linhas `NOME=VALOR` são conteúdo do arquivo, não
+comandos PowerShell. Para gerar mídia, preencha pelo menos:
 
-```powershell
+```dotenv
 GFLOW_PROJECT_ID=seu-projeto
+GFLOW_ROOT=D:/caminho/para/gflow-videos
 ```
+
+Antes de usar dados reais, leia o [guia de primeiro uso](docs/PRIMEIRO_USO.md)
+e a [referência de configuração](docs/CONFIGURACAO.md). O guia cobre a planilha,
+a classificação pela IA, a importação, o painel e o limite seguro antes de
+qualquer operação paga.
 
 ## Comandos atuais
 
@@ -58,6 +78,11 @@ Executar o pipeline:
 ```powershell
 python -m pipeline_flow
 ```
+
+Esse comando percorre etapas pendentes e pode chamar o `gflow` quando já
+existem planos importados e autorizações válidas. No primeiro uso, prepare e
+importe os dados antes; faça a revisão pelo painel e confirme separadamente
+qualquer geração.
 
 `--projeto seu-projeto` continua disponível para sobrescrever a configuração
 em uma execução específica.
@@ -131,3 +156,11 @@ Para regenerar a planilha de forma determinística:
 ```powershell
 python scripts/gerar_modelo_planilha.py
 ```
+
+Documentação complementar:
+
+- [primeiro uso](docs/PRIMEIRO_USO.md);
+- [configuração](docs/CONFIGURACAO.md);
+- [fluxo operacional](docs/FLUXO_OPERACIONAL.md);
+- [solução de problemas](docs/SOLUCAO_DE_PROBLEMAS.md);
+- [guia completo da planilha](entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
