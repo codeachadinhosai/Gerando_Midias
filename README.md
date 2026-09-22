@@ -67,6 +67,16 @@ qualquer operação paga.
 
 ## Comandos atuais
 
+Diagnosticar a instalação sem gerar mídia:
+
+```powershell
+python scripts/diagnosticar_configuracao.py
+```
+
+O diagnóstico verifica Python, dependências, `.env`, planilha, diretórios e
+disponibilidade do Flow. Ele não exibe o ID do projeto, não cria arquivos e não
+executa o `gflow`.
+
 Preparar um pacote para classificação:
 
 ```powershell
@@ -141,6 +151,10 @@ python -m pytest
 Os testes devem usar diretórios temporários e mocks. Nenhuma chamada paga ou
 geração real deve ocorrer.
 
+## Licença
+
+Este projeto é distribuído sob a [Licença MIT](LICENSE).
+
 ## Dados locais
 
 O repositório versionará código, contratos, guias e exemplos sanitizados.
@@ -161,6 +175,8 @@ Documentação complementar:
 
 - [primeiro uso](docs/PRIMEIRO_USO.md);
 - [configuração](docs/CONFIGURACAO.md);
+- [planilha operacional](docs/PLANILHA.md);
+- [IA e classificação](docs/IA_E_CLASSIFICACAO.md);
 - [fluxo operacional](docs/FLUXO_OPERACIONAL.md);
 - [solução de problemas](docs/SOLUCAO_DE_PROBLEMAS.md);
-- [guia completo da planilha](entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
+- [referência histórica detalhada da planilha](entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).

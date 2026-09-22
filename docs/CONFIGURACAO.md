@@ -88,14 +88,30 @@ Usar um argumento não altera o `.env`.
 ## Verificação segura
 
 ```powershell
+python scripts\diagnosticar_configuracao.py
+python scripts\diagnosticar_configuracao.py --json
 python -m pipeline_flow --help
 python scripts\servir_painel.py --help
-Test-Path entradas\controle_pipeline_flow.xlsx
-Test-Path D:\caminho\para\gflow-videos\.venv\Scripts\gflow.exe
 ```
 
-Essas verificações não geram mídia. Ainda não existe um comando único de
-diagnóstico; sua implementação permanece uma atividade separada da Fase 6.
+O diagnóstico confere:
+
+- Python 3.11 ou superior e plataforma;
+- dependências de execução e `openpyxl`;
+- existência e validade sintática do `.env`;
+- carregamento da configuração sem executar o pipeline;
+- existência e estrutura da aba `Controle` na planilha;
+- permissão de escrita aparente nos diretórios configurados, sem criar arquivos;
+- presença de `GFLOW_PROJECT_ID`, `gflow.exe` e modelo `omni-flash`.
+
+A saída separa `Pipeline local` de `Geração no Flow`. A ausência do projeto
+ou do executável externo aparece como aviso e não bloqueia preparação,
+classificação, importação, revisão ou carrosséis locais. Erros que impedem o
+trabalho local encerram o comando com código 2; avisos encerram com código 0.
+
+`--json` produz uma saída estruturada para suporte e automação. O conteúdo do
+`.env` e o identificador do projeto não são exibidos. Nenhuma dessas
+verificações gera mídia, cria diretórios ou executa o `gflow`.
 
 ## Erros comuns
 

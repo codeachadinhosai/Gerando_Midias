@@ -33,8 +33,8 @@ O pacote principal fica em `src/pipeline_flow`.
 
 - `domain`: estados canonicos, eventos operacionais e modelos sem acesso a
   arquivos.
-- `services`: preparacao, importacao, execucao Flow, carrossel, migracao, logs
-  e controle de execucao.
+- `services`: preparacao, importacao, diagnostico seguro, execucao Flow,
+  carrossel, migracao, logs e controle de execucao.
 - `web`: backend FastAPI local, consultas, operacoes confirmadas, templates e
   ativos da interface.
 - `config.py`: fachada publica de configuracao.
@@ -42,6 +42,12 @@ O pacote principal fica em `src/pipeline_flow`.
 
 Os scripts em `scripts/` sao wrappers compativeis com o fluxo anterior. Eles
 chamam os servicos do pacote para evitar divergencia entre CLI e painel.
+
+O diagnostico de configuracao e exposto por
+`scripts/diagnosticar_configuracao.py`. Ele somente le ambiente, caminhos e a
+estrutura da planilha; nao cria arquivos, nao inicia subprocessos e nao chama o
+Flow. O relatorio separa a prontidao local da disponibilidade para geracao
+externa.
 
 ### Backend local
 

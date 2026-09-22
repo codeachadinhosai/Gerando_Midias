@@ -1,7 +1,7 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 6 em andamento — acessibilidade, responsividade e experiência visual concluídas
-Última atualização: 2026-09-20
+Status: Fase 6 em andamento — documentação, diagnóstico seguro e licença MIT concluídos
+Última atualização: 2026-09-22
 Documento de referência para continuidade entre contas e sessões do Codex.
 
 ## 1. Objetivo
@@ -400,14 +400,13 @@ Entregáveis concluídos nesta parte:
 - reescrever o início do README como roteiro executável de primeiro uso;
 - documentar a criação da planilha operacional a partir do modelo sanitizado;
 - documentar obtenção, instalação e validação do `gflow.exe`;
-- criar os guias de primeiro uso e configuração, mantendo o README curto.
+- criar os guias de primeiro uso e configuração, mantendo o README curto;
+- consolidar planilha e classificação por IA em documentos próprios;
+- criar diagnóstico seguro de configuração, sem geração nem consumo de créditos;
+- escolher e adicionar a licença MIT ao repositório e ao pacote.
 
 Entregáveis restantes:
 
-- criar diagnóstico seguro de configuração, sem geração nem consumo de créditos;
-- consolidar planilha, classificação por IA e atualização em documentos
-  próprios;
-- escolher e adicionar a licença do projeto;
 - completar descrição, tópicos e instruções de suporte do repositório;
 - configurar GitHub Actions para instalação limpa, Ruff, testes, contratos e
   smoke test web somente leitura;
@@ -421,10 +420,12 @@ a CI reproduz as verificações sem segredos, dados reais ou chamadas pagas; e a
 licença e as condições de suporte estão explícitas.
 
 Status: em andamento. O refinamento de acessibilidade, responsividade e
-experiência visual e o roteiro de primeiro uso foram concluídos sem alterar os
-fluxos operacionais. Restam os documentos dedicados de planilha e classificação
-por IA, o diagnóstico de configuração, a licença, a configuração de CI, o teste
-de aceitação em clone limpo e a auditoria de release.
+experiência visual, o roteiro de primeiro uso e os documentos dedicados de
+planilha e classificação por IA e o diagnóstico seguro foram concluídos sem
+alterar os fluxos operacionais. A licença MIT foi escolhida explicitamente pela
+titular e adicionada. Restam os metadados e suporte do repositório, a estratégia
+de dependências, a configuração de CI, o teste de aceitação em clone limpo e a
+auditoria de release.
 
 ## 12. Modelo recomendado
 
@@ -443,9 +444,9 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Consolidar os documentos dedicados da planilha e da classificação por IA,
-reduzindo a dependência dos guias históricos em `entradas/`. O diagnóstico de
-configuração, a escolha da licença, a CI, o teste de aceitação e o release
+Definir a estratégia de dependências reproduzíveis e a matriz de Python antes
+de configurar a CI. A titular decidiu adiar descrição, tópicos e instruções de
+suporte do repositório para o fechamento final. CI, teste de aceitação e release
 continuam atividades separadas, cada uma com gate próprio.
 
 Já concluído nesta fase:
@@ -466,6 +467,77 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-22 - Licença MIT da Fase 6
+
+A titular escolheu explicitamente a licença MIT:
+
+- adicionado `LICENSE` com o texto padrão da OSI, ano 2026 e titular
+  `codeachadinhosai`;
+- `pyproject.toml` referencia o arquivo e declara o classificador Trove
+  correspondente à licença MIT;
+- o README aponta para a licença na raiz;
+- nenhuma configuração do remoto, publicação ou tag foi realizada.
+
+Verificação: wheel `0.1.0` construída com sucesso e confirmada com
+`dist-info/licenses/LICENSE`; 157 testes e 10 subtestes aprovados;
+`git diff --check` sem erros. Permanece apenas o aviso conhecido de
+depreciação do `TestClient`. Nenhuma mídia foi gerada e nenhum crédito foi
+consumido.
+
+Decisão posterior da titular: adiar metadados e política de suporte para o
+fechamento final. A consolidação destas alterações em commit local passou a ser
+a próxima atividade.
+
+### 2026-09-22 - Diagnóstico seguro de configuração da Fase 6
+
+Foi criado um diagnóstico independente do orquestrador cotidiano:
+
+- `scripts/diagnosticar_configuracao.py` chama um serviço do pacote e oferece
+  saída humana ou JSON;
+- o comando confere Python, plataforma, dependências, `.env`, configuração,
+  planilha, permissões aparentes dos diretórios, projeto, `gflow.exe` e
+  `omni-flash`;
+- prontidão local e disponibilidade para geração externa são resultados
+  separados, portanto a ausência do Flow não bloqueia tarefas locais;
+- o identificador do projeto e o conteúdo do `.env` não são exibidos;
+- o diagnóstico não cria arquivos ou diretórios, não inicia subprocessos, não
+  chama o Flow e retorna código 2 somente para erros locais;
+- README, configuração, primeiro uso e arquitetura foram atualizados com o novo
+  comando.
+
+Verificação: 157 testes e 10 subtestes aprovados; Ruff aprovado nos três arquivos
+novos; ajuda, saída humana, saída JSON e `git diff --check` aprovados. A
+varredura Ruff completa identificou 73 ocorrências preexistentes fora deste
+escopo. Nenhuma mídia foi gerada e nenhum crédito foi consumido.
+
+Próxima ação: solicitar à titular a escolha da licença sob novo gate `low`;
+nenhuma licença deve ser adicionada por inferência.
+
+### 2026-09-21 - Guias de planilha e classificação da Fase 6
+
+A documentação operacional foi consolidada sem alterar código ou estado do
+pipeline:
+
+- criado `docs/PLANILHA.md` com estrutura do arquivo, propriedade das colunas,
+  valores aceitos, distinções conceituais, exemplo mínimo e contrato de edição
+  de imagem-base;
+- criado `docs/IA_E_CLASSIFICACAO.md` com responsabilidades, preparação do
+  pacote, requisitos da resposta, validação, importação e separação entre
+  classificação e geração;
+- registrada a regra prevalente de que `gerar_carrossel=sim` autoriza somente o
+  card, enquanto `aprovacao=aprovada` é exigida exclusivamente para vídeo;
+- documentados os limites do carrossel e as regras executáveis do contrato
+  `2.3-insumos`, sem promover extensões ainda não aceitas pelo importador;
+- README e roteiro de primeiro uso agora apontam primeiro para os guias atuais,
+  mantendo os materiais em `entradas/` como referências detalhadas.
+
+Verificação: conteúdo confrontado com o contrato, o gerador da planilha e o
+validador de importação; links Markdown e integridade do diff verificados. Não
+houve chamada ao Flow, geração de mídia ou consumo de créditos.
+
+Próxima ação: implementar o diagnóstico seguro de configuração sob novo gate
+`medium`, com testes que não chamem o Flow.
 
 ### 2026-09-21 - Roteiro de primeiro uso da Fase 6
 

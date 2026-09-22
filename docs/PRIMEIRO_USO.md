@@ -76,18 +76,18 @@ pelo pipeline é `omni-flash`. Consulte
 ## 5. Fazer verificações sem geração
 
 ```powershell
+python scripts\diagnosticar_configuracao.py
 python -m pipeline_flow --help
 python scripts\preparar_insumos.py --help
 python scripts\gerar_imagens.py --help
 python scripts\servir_painel.py --help
-Test-Path entradas\controle_pipeline_flow.xlsx
-$GflowRoot = (Get-Content .env | Select-String '^GFLOW_ROOT=').Line.Split('=', 2)[1]
-Test-Path (Join-Path $GflowRoot '.venv\Scripts\gflow.exe')
 ```
 
-Os comandos com `--help` não executam o pipeline. O último teste é apenas uma
-conferência de caminho; se `GFLOW_ROOT` ainda estiver com o valor de exemplo,
-o resultado esperado é `False`.
+O diagnóstico não gera mídia, não cria arquivos e não executa o `gflow`. Ele
+mostra separadamente se o pipeline local está pronto e se a geração no Flow
+está disponível. Corrija qualquer `ERRO`; avisos sobre projeto ou
+`gflow.exe` podem permanecer enquanto você trabalhar somente nas etapas
+locais. Os comandos com `--help` também não executam o pipeline.
 
 ## 6. Preencher a primeira produção
 
@@ -103,7 +103,7 @@ Abra `entradas/controle_pipeline_flow.xlsx` e use a aba `Controle`:
 
 A aba `Exemplo_Producao` contém dados fictícios para consulta e não é
 processada como produção. Para detalhes de todas as colunas, consulte o
-[guia da planilha](../entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
+[guia da planilha](PLANILHA.md).
 
 ## 7. Preparar o pacote
 
@@ -122,10 +122,12 @@ misture arquivos de pacotes diferentes.
 
 ## 8. Classificar e importar
 
-Para classificar neste projeto, siga
-[Como processar em um novo chat](../entradas/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md).
-Para outra IA, siga
-[Como usar em outra IA](../entradas/01_COMO_USAR_EM_OUTRA_IA.md).
+Siga o guia [IA e classificação](IA_E_CLASSIFICACAO.md). Ele descreve o pacote,
+as responsabilidades da IA, o contrato atual e a importação. Os roteiros
+históricos para
+[um novo chat](../entradas/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md) e
+[outra IA](../entradas/01_COMO_USAR_EM_OUTRA_IA.md) permanecem disponíveis para
+consulta detalhada.
 
 A classificação deve produzir JSON puro, preservar `pacote_sha256` e não gerar
 imagem, vídeo ou aprovação. Salve a resposta em
