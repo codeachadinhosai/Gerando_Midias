@@ -102,6 +102,19 @@ class ConfigurationDiagnosticsTest(unittest.TestCase):
         )
         self.assertEqual(check["status"], "erro")
 
+    def test_openpyxl_is_a_required_runtime_dependency(self):
+        report = self.diagnose(
+            environ={},
+            module_available=lambda name: name != "openpyxl",
+        )
+
+        self.assertFalse(report["pipeline_local_pronto"])
+        check = next(
+            item for item in report["verificacoes"]
+            if item["id"] == "dependencia_openpyxl"
+        )
+        self.assertEqual(check["status"], "erro")
+
     def test_main_uses_nonzero_exit_only_for_local_errors(self):
         ready = {
             "status": "atencao",

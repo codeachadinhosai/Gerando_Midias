@@ -197,7 +197,8 @@ Nao reenvie automaticamente.
 Causas comuns:
 
 - `GFLOW_PROJECT_ID` vazio para video;
-- `GFLOW_ROOT` aponta para pasta errada;
+- o `gflow-cli` não foi instalado na `.venv` do projeto ou `GFLOW_ROOT`
+  aponta para uma instalação externa incorreta;
 - `GFLOW_VIDEO_MODEL` fora da lista aceita;
 - `GFLOW_TIMEOUT_SECONDS` nao e inteiro positivo;
 - `WEB_HOST` nao e loopback.

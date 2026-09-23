@@ -81,7 +81,8 @@ Variaveis reconhecidas:
 
 - `GFLOW_PROJECT_ID`: projeto Flow usado para gerar video.
 - `GFLOW_CLI_DEFAULT_PROJECT`: alias legado aceito durante a transicao.
-- `GFLOW_ROOT`: raiz da instalacao do `gflow-videos`.
+- `GFLOW_ROOT`: sobrescrita opcional para uma instalacao externa do `gflow`;
+  sem ela, o executavel vem da `.venv` deste projeto.
 - `PIPELINE_SPREADSHEET`: caminho da planilha operacional.
 - `PIPELINE_OUTPUT_DIR`: raiz de `preparados`.
 - `PIPELINE_DELIVERY_DIR`: raiz de `entregas_flow`.

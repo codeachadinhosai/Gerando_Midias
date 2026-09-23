@@ -576,7 +576,7 @@ function videoReadiness(production, clip) {
       key: 'blocked',
       label: 'gflow.exe não encontrado',
       tone: 'error',
-      detail: 'Corrija GFLOW_ROOT antes de tentar gerar vídeo.',
+      detail: 'Execute o instalador ou corrija GFLOW_ROOT antes de gerar vídeo.',
       execution,
     };
   }

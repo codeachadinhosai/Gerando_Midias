@@ -8,20 +8,16 @@ no painel. Ele para antes de qualquer geração paga.
 - Windows com PowerShell;
 - Git;
 - Python 3.11 ou superior;
-- acesso autorizado ao Flow;
-- `gflow` fornecido pela pessoa responsável pelo ambiente, caso seja necessário
-  gerar imagens ou vídeos.
+- acesso autorizado ao Flow.
 
-O `gflow` é uma dependência externa e não está incluído no repositório. A raiz
-informada em `GFLOW_ROOT` deve conter:
+O projeto instala `gflow-cli==0.74.0` e cria o executável:
 
 ```text
-<GFLOW_ROOT>/.venv/Scripts/gflow.exe
+.venv/Scripts/gflow.exe
 ```
 
-Sem esse executável ainda é possível instalar o projeto, preparar pacotes,
-classificar e importar respostas, revisar dados e trabalhar com carrosséis a
-partir de uma imagem já registrada. Não tente gerar imagem ou vídeo.
+`GFLOW_ROOT` é necessário apenas para manter compatibilidade com uma
+instalação externa existente.
 
 ## 2. Clonar e instalar
 
@@ -30,28 +26,26 @@ Abra o PowerShell:
 ```powershell
 git clone https://github.com/codeachadinhosai/Gerando_Midias.git
 Set-Location Gerando_Midias
-py --version
-py -m venv .venv
+powershell -ExecutionPolicy Bypass -File .\scripts\instalar.ps1
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
 ```
 
-O resultado de `py --version` deve ser Python 3.11 ou superior. A instalação
-`.[dev]` é a recomendada nesta fase porque inclui as ferramentas de planilha,
-testes e lint usadas pelo projeto.
+O instalador valida Python 3.11 ou superior, cria a `.venv`, instala o projeto
+com as ferramentas de desenvolvimento e instala o Chromium usado pelo
+`gflow-cli`. Use `-SemDev` para omitir testes e lint ou `-SemChromium`
+somente quando o navegador compatível já estiver instalado pelo Playwright.
 
 ## 3. Criar os arquivos locais
 
 ```powershell
-Copy-Item .env.example .env
-Copy-Item exemplos\controle_pipeline_flow.modelo.xlsx entradas\controle_pipeline_flow.xlsx
-New-Item -ItemType Directory -Force identidade | Out-Null
-Copy-Item exemplos\identidade.example.txt identidade\identidade.txt
+Get-Item .env
+Get-Item entradas\controle_pipeline_flow.xlsx
+Get-Item identidade\identidade.txt
 ```
 
-Esses arquivos são ignorados pelo Git. O arquivo de identidade copiado é
-fictício: substitua-o somente por dados que você tenha autorização para usar.
+O instalador copia esses modelos somente quando ainda não existem. Eles são
+ignorados pelo Git. O arquivo de identidade é fictício: substitua-o somente por
+dados que você tenha autorização para usar.
 Não versione o `.env`, a planilha operacional, identidades, respostas da IA,
 produções, logs ou mídias.
 
@@ -65,23 +59,28 @@ Para usar o Flow, configure:
 
 ```dotenv
 GFLOW_PROJECT_ID=seu-projeto
-GFLOW_ROOT=D:/caminho/para/gflow-videos
 GFLOW_VIDEO_MODEL=omni-flash
 ```
 
-Use barras `/` ou caminhos absolutos válidos. O único modelo de vídeo aceito
-pelo pipeline é `omni-flash`. Consulte
+Deixe `GFLOW_ROOT` vazio para usar o executável instalado no projeto. O único
+modelo de vídeo aceito pelo pipeline é `omni-flash`. Consulte
 [Configuração](CONFIGURACAO.md) para todas as variáveis e sua precedência.
 
 ## 5. Fazer verificações sem geração
 
 ```powershell
+gflow auth login --browser chrome
+gflow auth status
 python scripts\diagnosticar_configuracao.py
 python -m pipeline_flow --help
 python scripts\preparar_insumos.py --help
 python scripts\gerar_imagens.py --help
 python scripts\servir_painel.py --help
 ```
+
+O login abre uma janela do navegador e salva a sessão somente no perfil local
+do `gflow`, fora do Git. Ele não gera mídia. Se já houver uma sessão válida,
+use apenas `gflow auth status`.
 
 O diagnóstico não gera mídia, não cria arquivos e não executa o `gflow`. Ele
 mostra separadamente se o pipeline local está pronto e se a geração no Flow

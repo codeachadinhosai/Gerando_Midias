@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import re
-from typing import Mapping
+from collections.abc import Mapping
+from pathlib import Path
 
 from pipeline_flow.domain import ConfigError
 
@@ -55,6 +55,6 @@ def resolve_path(value: str, root: Path, default: Path) -> Path:
 
 def legacy_gflow_root(cli_home: str, root: Path) -> Path:
     if not cli_home:
-        return (root.parent / 'gflow-videos').resolve()
+        return root.resolve()
     home = resolve_path(cli_home, root, root / 'unused')
-    return home.parents[1] if len(home.parents) >= 2 else (root.parent / 'gflow-videos').resolve()
+    return home.parents[1] if len(home.parents) >= 2 else root.resolve()

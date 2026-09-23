@@ -411,7 +411,6 @@ Entregáveis restantes:
 - completar descrição, tópicos e instruções de suporte do repositório;
 - configurar GitHub Actions para instalação limpa, Ruff, testes, contratos e
   smoke test web somente leitura;
-- definir a estratégia de dependências reproduzíveis e a matriz de Python;
 - executar teste de aceitação com uma pessoa partindo de um clone limpo;
 - preparar notas de versão, auditoria final, tag e release `v1.0.0`.
 
@@ -426,7 +425,7 @@ planilha e classificação por IA e o diagnóstico seguro foram concluídos sem
 alterar os fluxos operacionais. A licença MIT foi escolhida explicitamente pela
 titular e adicionada. Materiais v1, guias substituídos e arquivos locais soltos
 foram preservados em `arquivo_historico/`. Restam os metadados e suporte do
-repositório, a estratégia de dependências, a configuração de CI, o teste de
+repositório, a configuração de CI, o teste de
 aceitação em clone limpo e a auditoria de release.
 
 ## 12. Modelo recomendado
@@ -446,10 +445,11 @@ refatoração e interface; `high` apenas para bugs complexos e auditorias.
 
 ## 13. Próxima ação
 
-Definir a estratégia de dependências reproduzíveis e a matriz de Python antes
-de configurar a CI. A titular decidiu adiar descrição, tópicos e instruções de
-suporte do repositório para o fechamento final. CI, teste de aceitação e release
-continuam atividades separadas, cada uma com gate próprio.
+Configurar a CI para validar instalação limpa, Ruff, testes, contratos e smoke
+test somente leitura em Windows com Python 3.11 e 3.13. A titular decidiu adiar
+descrição, tópicos e instruções de suporte do repositório para o fechamento
+final. CI, teste de aceitação e release continuam atividades separadas, cada
+uma com gate próprio.
 
 Já concluído nesta fase:
 
@@ -469,6 +469,33 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-23 - Instalação integrada do gflow
+
+O repositório passou a conter tudo o que pode ser distribuído para instalar a
+integração, sem incluir ambiente virtual, credenciais ou sessão:
+
+- `gflow-cli==0.74.0` foi promovido a dependência de runtime com versão fixa;
+- `openpyxl`, usado pelo pipeline cotidiano, deixou de ser apenas dependência
+  de desenvolvimento;
+- `scripts/instalar.ps1` cria a `.venv`, instala projeto e Chromium e copia
+  somente modelos locais ausentes;
+- instalações novas usam `.venv/Scripts/gflow.exe` do próprio projeto;
+- `GFLOW_ROOT` e `GFLOW_CLI_HOME` permanecem compatíveis com instalações
+  externas existentes;
+- a estratégia adota Python 3.11 e 3.13 na matriz Windows, com pin exato para o
+  contrato externo do `gflow-cli` e faixas compatíveis para as bibliotecas;
+- os guias passaram a cobrir instalação, login local e diagnóstico sem geração;
+- `data/`, ambiente, configuração, sessão e mídias locais continuam ignorados.
+
+Verificação: instalação real aprovada no Python 3.13.5, com
+`gflow-cli 0.74.0` e Chromium disponíveis; diagnóstico encontrou o executável
+local e informou pipeline e Flow prontos; `pip check` não encontrou conflitos;
+160 testes, Ruff nos arquivos Python alterados, sintaxe PowerShell e
+`git diff --check` aprovados. Permanece apenas o aviso conhecido
+de depreciação do `TestClient`. A execução em Python 3.11 será coberta pela CI.
+
+Próxima ação: configurar a CI sob gate próprio.
 
 ### 2026-09-22 - Arquivamento de materiais substituídos
 

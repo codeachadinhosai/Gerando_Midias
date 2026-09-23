@@ -24,17 +24,17 @@ a arquitetura.
 - Git;
 - Python 3.11 ou superior;
 - acesso ao Flow e ao identificador do projeto usado nas gerações;
-- `gflow` externo, necessário apenas para gerar imagens ou vídeos.
+- navegador Chromium usado pelo `gflow-cli`.
 
-O `gflow` não é distribuído neste repositório. Obtenha-o com a pessoa
-responsável pelo ambiente e confirme que existe:
+O pacote `gflow-cli==0.74.0` faz parte das dependências do projeto. A
+instalação cria automaticamente:
 
 ```text
-<GFLOW_ROOT>\.venv\Scripts\gflow.exe
+.venv\Scripts\gflow.exe
 ```
 
-Preparação de pacotes, classificação, importação, revisão e carrosséis locais
-podem ser organizados antes de configurar o executável externo.
+`GFLOW_ROOT` continua aceito somente para compatibilidade com uma instalação
+externa existente.
 
 ## Primeiro uso
 
@@ -43,21 +43,26 @@ No PowerShell:
 ```powershell
 git clone https://github.com/codeachadinhosai/Gerando_Midias.git
 Set-Location Gerando_Midias
-py --version
-py -m venv .venv
+powershell -ExecutionPolicy Bypass -File .\scripts\instalar.ps1
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-Copy-Item .env.example .env
-Copy-Item exemplos\controle_pipeline_flow.modelo.xlsx entradas\controle_pipeline_flow.xlsx
 ```
 
+O instalador cria a `.venv`, instala o projeto, o `gflow-cli`, o Chromium e
+os modelos locais que estiverem ausentes. Ele não sobrescreve arquivos
+existentes, não faz login e não gera mídia.
+
 Edite o arquivo `.env`; as linhas `NOME=VALOR` são conteúdo do arquivo, não
-comandos PowerShell. Para gerar mídia, preencha pelo menos:
+comandos PowerShell. Para gerar mídia, preencha:
 
 ```dotenv
 GFLOW_PROJECT_ID=seu-projeto
-GFLOW_ROOT=D:/caminho/para/gflow-videos
+```
+
+Depois faça o login interativo:
+
+```powershell
+gflow auth login --browser chrome
+gflow auth status
 ```
 
 Antes de usar dados reais, leia o [guia de primeiro uso](docs/PRIMEIRO_USO.md)

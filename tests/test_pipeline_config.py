@@ -33,6 +33,7 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertEqual(config.web_host, '127.0.0.1')
         self.assertEqual(config.web_port, 8765)
         self.assertEqual(config.project_id, '')
+        self.assertEqual(config.gflow_root, self.root)
 
     def test_dotenv_loads_paths_and_project(self):
         self.write_env(
@@ -79,6 +80,14 @@ class PipelineConfigTest(unittest.TestCase):
         config = pipeline_config.load_config(
             self.root,
             environ={'GFLOW_CLI_HOME': str(gflow_root / 'data/flow_gflow')},
+        )
+        self.assertEqual(config.gflow_root, gflow_root)
+
+    def test_explicit_gflow_root_keeps_external_installation_compatible(self):
+        gflow_root = self.root / 'external-gflow'
+        config = pipeline_config.load_config(
+            self.root,
+            environ={'GFLOW_ROOT': str(gflow_root)},
         )
         self.assertEqual(config.gflow_root, gflow_root)
 

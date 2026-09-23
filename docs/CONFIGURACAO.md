@@ -23,15 +23,14 @@ Para operações que chamam o Flow:
 
 ```dotenv
 GFLOW_PROJECT_ID=seu-projeto
-GFLOW_ROOT=D:/caminho/para/gflow-videos
 GFLOW_VIDEO_MODEL=omni-flash
 ```
 
-O `gflow` é externo a este repositório. Obtenha a instalação com a pessoa
-responsável pelo ambiente. O pipeline procura o executável em:
+O instalador do projeto inclui `gflow-cli==0.74.0`. Sem `GFLOW_ROOT`, o
+pipeline procura o executável em:
 
 ```text
-<GFLOW_ROOT>/.venv/Scripts/gflow.exe
+<RAIZ_DO_PROJETO>/.venv/Scripts/gflow.exe
 ```
 
 ## Variáveis do pipeline
@@ -39,7 +38,7 @@ responsável pelo ambiente. O pipeline procura o executável em:
 | Variável | Padrão | Uso |
 |---|---|---|
 | `GFLOW_PROJECT_ID` | vazio | Projeto usado nas chamadas de geração. Obrigatório para gerar mídia. |
-| `GFLOW_ROOT` | pasta `gflow-videos` irmã do projeto | Raiz externa que contém `.venv/Scripts/gflow.exe`. |
+| `GFLOW_ROOT` | raiz deste projeto | Sobrescreve a raiz do executável somente para uma instalação externa existente. |
 | `GFLOW_VIDEO_MODEL` | `omni-flash` | Modelo de vídeo. O pipeline aceita somente `omni-flash`. |
 | `GFLOW_TIMEOUT_SECONDS` | `1800` | Limite positivo, em segundos, para chamadas externas. |
 | `PIPELINE_SPREADSHEET` | `entradas/controle_pipeline_flow.xlsx` | Planilha operacional. Caminho relativo parte da raiz do projeto. |
@@ -53,13 +52,27 @@ responsável pelo ambiente. O pipeline procura o executável em:
 
 `GFLOW_CLI_HOME` continua aceito para inferir a raiz do `gflow` quando
 `GFLOW_ROOT` não está preenchido. O formato esperado é
-`<GFLOW_ROOT>/data/flow_gflow`. Prefira configurar `GFLOW_ROOT` diretamente.
+`<GFLOW_ROOT>/data/flow_gflow`. Em instalações novas, deixe ambos vazios.
 
 No `.env` deste repositório, o pipeline interpreta diretamente apenas os
 aliases `GFLOW_CLI_DEFAULT_PROJECT` e `GFLOW_CLI_HOME`. As demais variáveis
 `GFLOW_CLI_*` do modelo são referências para o ambiente externo e não devem
 ser consideradas automaticamente repassadas ao processo `gflow`. Configure-as
 somente conforme a documentação da instalação fornecida pelo responsável.
+
+O perfil, a sessão e os metadados locais do `gflow` ficam em `data/`, que é
+ignorada pelo Git. Nunca versione essa pasta.
+
+## Dependências e versões
+
+`pyproject.toml` é a fonte das dependências instaláveis. O `gflow-cli` fica
+fixado em `0.74.0` porque sua linha de comando é um contrato direto do
+pipeline; atualizações exigem testes antes de alterar a versão. As demais
+dependências usam faixas compatíveis e são verificadas pela suíte.
+
+A matriz suportada é Windows com Python 3.11, versão mínima, e Python 3.13,
+versão corrente. Antes da release `v1.0.0`, a instalação limpa deve ser
+validada nas duas versões pela CI.
 
 ## Caminhos
 
@@ -115,8 +128,8 @@ verificações gera mídia, cria diretórios ou executa o `gflow`.
 
 ## Erros comuns
 
-- `gflow.exe nao encontrado`: corrija `GFLOW_ROOT` e confirme o caminho
-  exato do executável;
+- `gflow.exe nao encontrado`: execute `scripts\instalar.ps1`; se estiver
+  usando uma instalação externa, corrija `GFLOW_ROOT`;
 - projeto ausente: preencha `GFLOW_PROJECT_ID` ou use `--projeto`;
 - modelo inválido: mantenha `GFLOW_VIDEO_MODEL=omni-flash`;
 - timeout inválido: use um inteiro positivo em `GFLOW_TIMEOUT_SECONDS`;

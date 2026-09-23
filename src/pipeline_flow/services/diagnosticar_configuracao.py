@@ -18,7 +18,7 @@ DEPENDENCIES = (
     ("fastapi", "fastapi", True),
     ("Pillow", "PIL", True),
     ("uvicorn", "uvicorn", True),
-    ("openpyxl", "openpyxl", False),
+    ("openpyxl", "openpyxl", True),
 )
 
 
@@ -146,7 +146,7 @@ def diagnose(
                 "erro" if required else "aviso",
                 (
                     f"Dependencia {package} ausente."
-                    + (" Instale o projeto novamente." if required else " Instale o extra dev.")
+                    + " Instale o projeto novamente."
                 ),
             )
 
