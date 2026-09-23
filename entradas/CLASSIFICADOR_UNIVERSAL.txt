@@ -310,17 +310,17 @@ pendência/bloqueio. Não trocar silenciosamente.
 
 A Character Bible global pode conter:
 
-    rosto.jpg
-    rosto_1.jpg
+    rosto.jpeg
+    rosto_1.jpeg
     Corpo.png
-    mao.jpg
+    mao.png
 
 Funções:
 
--   rosto.jpg: identidade facial principal;
--   rosto_1.jpg: identidade facial complementar da mesma Júlia;
+-   rosto.jpeg: identidade facial principal;
+-   rosto_1.jpeg: identidade facial complementar da mesma Júlia;
 -   Corpo.png: proporções corporais e silhueta;
--   mao.jpg: aparência da mão, tom de pele, dedos e unhas.
+-   mao.png: aparência da mão, tom de pele, dedos, unhas e manicure.
 
 Esses arquivos são referências globais e não precisam estar associados
 linha a linha no Excel.
@@ -339,7 +339,7 @@ Usar mão quando as mãos forem visíveis e importantes para interação.
 
 POV somente com mão
 
-mao.jpg pode ser suficiente para identidade visível.
+mao.png pode ser suficiente para identidade visível.
 
 Não exigir rosto ou corpo apenas porque existe uma mão em quadro.
 
@@ -575,7 +575,7 @@ Primeira pessoa: mão alcança, pega e apresenta o produto.
 Entradas:
 
 -   produto inequívoco;
--   mao.jpg quando disponível/necessário;
+-   mao.png quando disponível/necessário;
 -   cena opcional.
 
 Usar somente quando pegada e levantamento forem plausíveis.
@@ -1639,7 +1639,7 @@ Antes de finalizar cada plano, verificar:
 4.  produto não foi confundido com objeto incidental;
 5.  nenhuma propriedade factual foi inventada;
 6.  identidade da Júlia foi solicitada somente quando necessária;
-7.  POV de mão usa mao.jpg quando apropriado;
+7.  POV de mão usa mao.png quando apropriado;
 8.  abertura é a única que começa com Bora...;
 9.  CTA não começa com Bora;
 10. clipes principais não viraram CTA por acidente;

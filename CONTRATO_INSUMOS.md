@@ -61,7 +61,7 @@ Não marcar imagem/video como gerado ou aprovado: nenhuma dessas operações oco
 
 ## Identidade e mãos
 A identidade textual original é imutável. Referências de rosto/corpo somente para partes relevantes.
-mao=true significa EXIGIR foto de mão. Se a foto não existe e correspondência exata não é indispensável, usar mao=false e descrever mãos plausíveis em cena.maos; não inventar referência.
+mao=true significa EXIGIR foto de mão. Quando mao.png estiver inventariada e a mão for visível e relevante, especialmente em POV, anexá-la como identidade_mao. Se a foto não existe e correspondência exata não é indispensável, usar mao=false e descrever mãos plausíveis em cena.maos; não inventar referência.
 CTA não exige foto de mão. Descrição simples: mãos adultas femininas, pele compatível com Júlia, unhas curtas naturais, gestos discretos; sem joias ou tatuagens inventadas.
 Se o pedido exigir correspondência exata indisponível, retornar pendência.
 Abertura tem Bora... em 0s. Principal e CTA não começam com Bora.

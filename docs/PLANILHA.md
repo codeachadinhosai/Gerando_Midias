@@ -29,7 +29,24 @@ Na aba `Controle`:
 As abas `Guia`, `Referencias_Identidade` e `Exemplo_Producao` servem para
 consulta. Somente a aba `Controle` é processada.
 
+A pasta `identidade/` é inventariada automaticamente. Em cenas POV nas quais
+a mão esteja visível e seja relevante, `mao.png` deve ser selecionada como
+`identidade_mao`; ela não substitui a imagem-base da cena e não exige
+referências de rosto ou corpo quando somente a mão aparece.
+
 Feche o Excel antes de executar comandos que leem ou atualizam a planilha.
+
+Para sincronizar uma planilha antiga com o modelo atual sem alterar as linhas
+operacionais:
+
+```powershell
+python scripts\preparar_insumos.py corrigir-planilha
+```
+
+O comando atualiza guias, listas, formatação e exemplos, migra o nome da aba de
+identidade quando necessário e cria uma cópia em `entradas/backups/` antes da
+substituição atômica. Ele também normaliza a configuração de exibição das abas
+para evitar avisos de reparo ao abrir o arquivo no Microsoft Excel.
 
 ## Campos preenchidos pela pessoa
 

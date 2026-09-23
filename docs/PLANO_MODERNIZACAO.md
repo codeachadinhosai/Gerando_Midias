@@ -470,6 +470,37 @@ pendências e próxima ação.
 
 ## 14. Registro de progresso
 
+### 2026-09-23 - Sincronização segura da planilha operacional
+
+A planilha operacional e o modelo versionado foram alinhados ao contrato atual:
+
+- `tipo_referencia` passou a apresentar conjuntamente `base_edicao`,
+  `produto`, `inspiracao`, `detalhe`, `ambiente` e `outro`;
+- `papel_na_producao` passou a incluir `automatico` no guia e na lista;
+- responsáveis, descrições, validações, filtro, congelamento e formatação
+  condicional da aba `Controle` foram sincronizados;
+- `Guia` e `Exemplo_Producao` foram reconstruídas pelo contrato atual;
+- `Referencias_Julia` foi migrada para `Referencias_Identidade`, preservando
+  quatro referências locais e classificando seus tipos;
+- `corrigir-planilha` agora realiza a sincronização completa com lock, backup
+  por hash, gravação atômica, verificação de conteúdo e retomada idempotente.
+- a configuração de painel e seleção da aba `Controle` passou a ser
+  normalizada e validada, evitando XML de exibição incompatível com o Excel;
+- a referência `mao.png` foi formalizada como `identidade_mao` para cenas
+  POV, e os nomes das referências faciais foram alinhados às extensões reais.
+
+A planilha real preservou 33 linhas operacionais e o hyperlink existente,
+comparados célula a célula com os backups. Após corrigir a configuração de
+exibição, o arquivo também foi aberto com sucesso pelo Microsoft Excel sem
+recuperação de conteúdo. Uma segunda execução não regravou o arquivo nem criou
+backup adicional. Nenhuma mídia foi gerada e nenhum crédito foi consumido.
+
+Verificação: cópia temporária da planilha real, teste de regressão dedicado,
+diagnóstico seguro, suíte completa e Ruff aprovados. Permanece apenas o aviso
+conhecido de depreciação do `TestClient`.
+
+Próxima ação: configurar a CI sob gate próprio.
+
 ### 2026-09-23 - Instalação integrada do gflow
 
 O repositório passou a conter tudo o que pode ser distribuído para instalar a

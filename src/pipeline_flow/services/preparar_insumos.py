@@ -1,24 +1,28 @@
 """Preparação local de insumos Flow. Apenas biblioteca padrão; nunca chama geração."""
+
 from __future__ import annotations
+
 import argparse
 import hashlib
 import io
 import json
-import math
 import os
-from pathlib import Path
 import re
 import shutil
 import tempfile
 import unicodedata
+import xml.etree.ElementTree as ET
 import zipfile
+from copy import copy
+from datetime import UTC, datetime
+from pathlib import Path
 
 from pipeline_flow.config import load_config
 from pipeline_flow.domain import (
+    STATE_FIELDS,
     CarouselStatus,
     ImageStatus,
     PipelineStatus,
-    STATE_FIELDS,
     VideoStatus,
     normalize_state,
     normalize_states,
@@ -28,8 +32,6 @@ from pipeline_flow.services.execution_control import (
     acquire_lock,
     release_lock,
 )
-import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[3]
 NS = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -82,7 +84,7 @@ def inside(base, relative):
     return p
 
 def now():
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 def column_name(index):
     """Converte indice baseado em zero para coluna Excel (A, Z, AA...)."""
@@ -345,6 +347,334 @@ class Workbook:
         finally:
             if Path(temporary).exists():
                 Path(temporary).unlink()
+
+
+def _control_snapshot(sheet):
+    rows = []
+    for row_number in range(4, max(sheet.max_row, 4) + 1):
+        row = []
+        for column in range(1, len(HEADERS) + 1):
+            cell = sheet.cell(row_number, column)
+            hyperlink = cell.hyperlink.target if cell.hyperlink else None
+            value = None if cell.value in (None, '') else cell.value
+            row.append((value, hyperlink))
+        rows.append(tuple(row))
+    return tuple(rows)
+
+
+def _identity_type(filename, description):
+    value = norm(f'{filename} {description}')
+    if 'mao' in value or 'unha' in value:
+        return 'identidade_mao'
+    if 'corpo' in value or 'silhueta' in value:
+        return 'identidade_corpo'
+    return 'identidade_rosto'
+
+
+def _spreadsheet_structure_is_current(path):
+    from openpyxl import Workbook as OpenpyxlWorkbook
+    from openpyxl import load_workbook
+
+    from pipeline_flow.services.gerar_modelo_planilha import (
+        add_example,
+        add_guide,
+        configure_control,
+    )
+
+    def values(sheet):
+        return tuple(
+            tuple(
+                None if cell.value in (None, '') else cell.value
+                for cell in row
+            )
+            for row in sheet.iter_rows()
+        )
+
+    def validations(sheet):
+        return sorted(
+            (
+                str(item.sqref),
+                item.formula1,
+                bool(item.showErrorMessage),
+            )
+            for item in sheet.data_validations.dataValidation
+        )
+
+    def view_state(sheet):
+        pane = sheet.sheet_view.pane
+        pane_state = None if pane is None else (
+            pane.xSplit,
+            pane.ySplit,
+            pane.topLeftCell,
+            pane.activePane,
+            pane.state,
+        )
+        selections = tuple(
+            (item.pane, item.activeCell, str(item.sqref))
+            for item in sheet.sheet_view.selection
+        )
+        return pane_state, selections
+
+    expected = OpenpyxlWorkbook()
+    configure_control(expected.active)
+    add_guide(expected)
+    add_example(expected)
+    workbook = load_workbook(path)
+    try:
+        required = {
+            'Controle',
+            'Guia',
+            'Referencias_Identidade',
+            'Exemplo_Producao',
+        }
+        if not required.issubset(workbook.sheetnames):
+            return False
+        control = workbook['Controle']
+        expected_control = expected['Controle']
+        return all(
+            [
+                control.cell(row, column).value
+                for column in range(1, len(HEADERS) + 1)
+            ]
+            == [
+                expected_control.cell(row, column).value
+                for column in range(1, len(HEADERS) + 1)
+            ]
+            for row in (1, 2, 3)
+        ) and all(
+            (
+                str(control.freeze_panes) == str(expected_control.freeze_panes),
+                view_state(control) == view_state(expected_control),
+                control.auto_filter.ref == expected_control.auto_filter.ref,
+                validations(control) == validations(expected_control),
+                len(control.conditional_formatting)
+                == len(expected_control.conditional_formatting),
+                values(workbook['Guia']) == values(expected['Guia']),
+                values(workbook['Exemplo_Producao'])
+                == values(expected['Exemplo_Producao']),
+                [
+                    workbook['Referencias_Identidade'].cell(1, column).value
+                    for column in range(1, 4)
+                ]
+                == ['tipo', 'arquivo', 'observação'],
+            )
+        )
+    finally:
+        workbook.close()
+        expected.close()
+
+
+def update_spreadsheet_structure(path):
+    from openpyxl import load_workbook
+
+    from pipeline_flow.services.gerar_modelo_planilha import (
+        DESCRIPTIONS,
+        OWNERS,
+        add_example,
+        add_guide,
+        configure_control,
+        style_header,
+    )
+
+    path = Path(path).resolve()
+    require(path.is_file(), f'Planilha ausente: {path}')
+    original_hash = digest(path)
+    Workbook(path, allow_legacy=True)
+    if _spreadsheet_structure_is_current(path):
+        workbook = load_workbook(path)
+        snapshot = _control_snapshot(workbook['Controle'])
+        sheets = workbook.sheetnames
+        workbook.close()
+        return {
+            'planilha': str(path),
+            'backup': None,
+            'linhas_operacionais_preservadas': sum(
+                1
+                for row in snapshot
+                if any(value not in (None, '') for value, _ in row)
+            ),
+            'abas': sheets,
+            'referencias_atualizadas': [],
+            'estrutura': [],
+            'resultado': 'planilha ja sincronizada',
+        }
+    lock_path = path.parent / 'backups' / ('.' + path.name + '.lock')
+    try:
+        handle = acquire_lock(
+            lock_path,
+            'atualizar-estrutura-planilha',
+            context={'planilha': str(path)},
+        )
+    except LockError as exc:
+        raise Invalid(str(exc)) from exc
+
+    temporary = None
+    result = None
+    try:
+        workbook = load_workbook(path)
+        control = workbook['Controle']
+        before = _control_snapshot(control)
+        actual_headers = [
+            control.cell(1, index).value
+            for index in range(1, len(HEADERS) + 1)
+        ]
+        current = actual_headers == HEADERS
+        legacy = (
+            actual_headers[:len(LEGACY_HEADERS)] == LEGACY_HEADERS
+            and not any(actual_headers[len(LEGACY_HEADERS):])
+        )
+        require(current or legacy, 'Cabeçalhos de Controle não reconhecidos.')
+
+        control.data_validations.dataValidation = []
+        control.conditional_formatting._cf_rules.clear()
+        configure_control(control)
+
+        guide_index = (
+            workbook.sheetnames.index('Guia')
+            if 'Guia' in workbook.sheetnames
+            else 1
+        )
+        if 'Guia' in workbook.sheetnames:
+            workbook.remove(workbook['Guia'])
+        add_guide(workbook, guide_index)
+
+        reference_updates = []
+        if (
+            'Referencias_Julia' in workbook.sheetnames
+            and 'Referencias_Identidade' in workbook.sheetnames
+        ):
+            raise Invalid(
+                'As abas Referencias_Julia e Referencias_Identidade coexistem; '
+                'revise antes de migrar.'
+            )
+        if 'Referencias_Julia' in workbook.sheetnames:
+            references = workbook['Referencias_Julia']
+            references.title = 'Referencias_Identidade'
+            legacy_rows = list(references.iter_rows(min_row=2, values_only=True))
+            references.delete_rows(1, references.max_row)
+            references.append(['tipo', 'arquivo', 'observação'])
+            for filename, description, management, *_ in legacy_rows:
+                if not any(value not in (None, '') for value in (filename, description, management)):
+                    continue
+                observation = '. '.join(
+                    str(value).strip().rstrip('.')
+                    for value in (description, management)
+                    if value not in (None, '')
+                )
+                if observation:
+                    observation += '.'
+                references.append([
+                    _identity_type(filename, description),
+                    filename,
+                    observation,
+                ])
+            reference_updates.append('Referencias_Julia -> Referencias_Identidade')
+        elif 'Referencias_Identidade' in workbook.sheetnames:
+            references = workbook['Referencias_Identidade']
+            references.cell(1, 1, 'tipo')
+            references.cell(1, 2, 'arquivo')
+            references.cell(1, 3, 'observação')
+        else:
+            raise Invalid('Aba de referências de identidade ausente.')
+        style_header(references)
+        references.column_dimensions['A'].width = 24
+        references.column_dimensions['B'].width = 38
+        references.column_dimensions['C'].width = 70
+        for row in references.iter_rows(min_row=2):
+            for cell in row:
+                alignment = copy(cell.alignment)
+                alignment.wrap_text = True
+                alignment.vertical = 'top'
+                cell.alignment = alignment
+
+        example_index = (
+            workbook.sheetnames.index('Exemplo_Producao')
+            if 'Exemplo_Producao' in workbook.sheetnames
+            else len(workbook.sheetnames)
+        )
+        if 'Exemplo_Producao' in workbook.sheetnames:
+            workbook.remove(workbook['Exemplo_Producao'])
+        add_example(workbook, example_index)
+        workbook.active = workbook.sheetnames.index('Controle')
+
+        after = _control_snapshot(control)
+        require(before == after, 'Dados operacionais mudaram durante a atualização.')
+        require(
+            [control.cell(2, index).value for index in range(1, len(HEADERS) + 1)]
+            == [OWNERS[name] for name in HEADERS],
+            'Responsáveis da planilha não foram sincronizados.',
+        )
+        require(
+            [control.cell(3, index).value for index in range(1, len(HEADERS) + 1)]
+            == [DESCRIPTIONS[name] for name in HEADERS],
+            'Descrições da planilha não foram sincronizadas.',
+        )
+
+        backup = (
+            path.parent
+            / 'backups'
+            / f'{path.stem}_{original_hash[:12]}.xlsx'
+        )
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        if not backup.exists():
+            shutil.copy2(path, backup)
+
+        descriptor, temporary_name = tempfile.mkstemp(
+            suffix='.xlsx',
+            dir=path.parent,
+        )
+        os.close(descriptor)
+        temporary = Path(temporary_name)
+        workbook.save(temporary)
+        workbook.close()
+
+        Workbook(temporary)
+        verification = load_workbook(temporary)
+        require(
+            _control_snapshot(verification['Controle']) == before,
+            'Verificação final detectou alteração nos dados operacionais.',
+        )
+        verification.close()
+        require(
+            digest(path) == original_hash,
+            'Excel mudou durante a operação. Reexecute para preservar a edição humana.',
+        )
+        os.replace(temporary, path)
+        temporary = None
+        result = {
+            'planilha': str(path),
+            'backup': str(backup),
+            'linhas_operacionais_preservadas': sum(
+                1
+                for row in before
+                if any(value not in (None, '') for value, _ in row)
+            ),
+            'abas': workbook.sheetnames,
+            'referencias_atualizadas': reference_updates,
+            'estrutura': [
+                'metadados de Controle',
+                'listas suspensas',
+                'formatação condicional',
+                'Guia',
+                'Exemplo_Producao',
+            ],
+        }
+    except BaseException as operation_error:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+        try:
+            release_lock(handle)
+        except LockError as lock_error:
+            operation_error.add_note(
+                f'Falha adicional ao liberar lock da planilha: {lock_error}'
+            )
+        raise
+    try:
+        release_lock(handle)
+    except LockError as exc:
+        raise Invalid(str(exc)) from exc
+    return result
+
 
 def resolve_file(name, roots):
     require(name and not Path(name).is_absolute() and not re.match(r"^[A-Za-z]:", name), f"Use caminho relativo: {name}")
@@ -793,15 +1123,7 @@ def main():
         output_dir=(args.saida or config.output_dir).resolve()
         spreadsheet=config.spreadsheet
         if args.command=="corrigir-planilha":
-            wb=Workbook(args.planilha or spreadsheet, allow_legacy=True)
-            added=wb.add_carousel_columns()
-            removed=wb.fix_validations()
-            dropdowns=wb.ensure_carousel_dropdowns()
-            help_text="Destinos da CTA separados por ;. Se vazio no card CTA, a IA escolhe uma acao segura."
-            help_updated=wb.rows.get(3, {}).get("Z") != help_text
-            if help_updated: wb.set(3,"cta_destino",help_text)
-            if removed or added or dropdowns or help_updated: wb.save()
-            result={"colunas_adicionadas":added,"listas_suspensas_atualizadas":dropdowns,"ajuda_cta_atualizada":help_updated,"validacoes_corrigidas":removed,"backup":"entradas/backups"}
+            result=update_spreadsheet_structure(args.planilha or spreadsheet)
         elif args.command=="preparar":
             roots=args.fontes or [args.raiz/"entradas",args.raiz/"referencia_gflow_original/Fila Flow"]
             result=prepare(args.raiz,args.planilha or spreadsheet,roots,output_dir=output_dir)

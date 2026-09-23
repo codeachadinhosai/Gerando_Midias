@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
-from pathlib import Path
 import re
 import zipfile
+from datetime import datetime
+from pathlib import Path
 
-from openpyxl import Workbook as OpenpyxlWorkbook, load_workbook
+from openpyxl import Workbook as OpenpyxlWorkbook
+from openpyxl import load_workbook
 from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.views import Selection
 
 from pipeline_flow.services.preparar_insumos import (
     HEADERS,
@@ -20,7 +22,6 @@ from pipeline_flow.services.preparar_insumos import (
     Workbook,
     column_name,
 )
-
 
 OUTPUT = ROOT / "exemplos" / "controle_pipeline_flow.modelo.xlsx"
 OWNERS = {
@@ -39,10 +40,12 @@ DESCRIPTIONS = {
     "produto_id": "Identificador estável do produto.",
     "producao_id": "Identificador que agrupa os clipes da produção.",
     "ordem": "Posição do clipe na produção.",
-    "papel_na_producao": "abertura, principal ou cta.",
+    "papel_na_producao": "automatico, abertura, principal ou cta.",
     "link_produto": "Link factual opcional; não é referência visual.",
     "usar_com": "Referências adicionais do mesmo clipe, separadas por ponto e vírgula.",
-    "tipo_referencia": "Papel visual do arquivo principal.",
+    "tipo_referencia": (
+        "base_edicao, produto, inspiracao, detalhe, ambiente, outro ou vazio."
+    ),
     "material_existente": "Ativo pronto que pode ser adaptado ou reutilizado.",
     "uso_material": "adaptar, reutilizar, referência ou automático.",
     "instrucao": "O que preservar, alterar e não copiar.",
@@ -105,9 +108,16 @@ def configure_control(sheet) -> None:
             cell.alignment = Alignment(wrap_text=True, vertical="top")
         sheet.row_dimensions[row].height = 42 if row == 3 else 22
     sheet.freeze_panes = "A4"
+    sheet.sheet_view.selection = [
+        Selection(pane="bottomLeft", activeCell="A4", sqref="A4")
+    ]
     sheet.auto_filter.ref = f"A1:{column_name(len(HEADERS) - 1)}500"
     add_validation(sheet, "A4:A500", ["sim", "não"])
-    add_validation(sheet, "F4:F500", ["abertura", "principal", "cta"])
+    add_validation(
+        sheet,
+        "F4:F500",
+        ["automatico", "abertura", "principal", "cta"],
+    )
     add_validation(
         sheet,
         "I4:I500",
@@ -138,8 +148,8 @@ def configure_control(sheet) -> None:
     )
 
 
-def add_guide(workbook) -> None:
-    sheet = workbook.create_sheet("Guia")
+def add_guide(workbook, index: int | None = None) -> None:
+    sheet = workbook.create_sheet("Guia", index)
     sheet.append(["campo", "preenchido por", "descrição"])
     for name in HEADERS:
         sheet.append([name, OWNERS[name], DESCRIPTIONS[name]])
@@ -155,7 +165,7 @@ def add_guide(workbook) -> None:
 
 def add_references(workbook) -> None:
     sheet = workbook.create_sheet("Referencias_Identidade")
-    sheet.append(["tipo", "arquivo fictício", "observação"])
+    sheet.append(["tipo", "arquivo", "observação"])
     sheet.append(["identidade_rosto", "referencias/rosto_exemplo.jpg", "Use somente com autorização."])
     sheet.append(["identidade_corpo", "referencias/corpo_exemplo.png", "Inclua apenas se o corpo aparecer."])
     sheet.append(["identidade_mao", "referencias/mao_exemplo.jpg", "Inclua somente quando necessária."])
@@ -165,8 +175,8 @@ def add_references(workbook) -> None:
     sheet.column_dimensions["C"].width = 52
 
 
-def add_example(workbook) -> None:
-    sheet = workbook.create_sheet("Exemplo_Producao")
+def add_example(workbook, index: int | None = None) -> None:
+    sheet = workbook.create_sheet("Exemplo_Producao", index)
     sheet.append(HEADERS)
     examples = [
         {
