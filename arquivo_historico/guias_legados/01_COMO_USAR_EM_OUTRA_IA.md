@@ -133,7 +133,7 @@ Não sobrescreva revisões anteriores nem reimporte sobre clipes com mídia em a
 
 Os novos pacotes usam o contrato 2.2-insumos, que exige os dois prompts quando aplicáveis. Pacotes antigos 2.1 podem não conter prompt de vídeo.
 
-Mais detalhes: [Guia dos insumos](../GUIA_INSUMOS_FLOW.md), [Contrato](../CONTRATO_INSUMOS.md) e [Guia da planilha](GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
+Mais detalhes: [Guia dos insumos](../documentacao_v1/GUIA_INSUMOS_FLOW.md), [Contrato](../../CONTRATO_INSUMOS.md) e [Guia da planilha](GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
 
 
 Para processar diretamente neste projeto em um novo chat, veja [Como processar aqui](02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md).

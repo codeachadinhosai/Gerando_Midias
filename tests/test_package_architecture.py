@@ -2,10 +2,11 @@ import tempfile
 import unittest
 from dataclasses import asdict
 from pathlib import Path
+from unittest.mock import patch
 
 import pipeline_flow
 import scripts.pipeline_config as legacy_config
-from pipeline_flow import adapters, domain, services
+from pipeline_flow import adapters, cli, domain, services
 
 
 class PackageArchitectureTest(unittest.TestCase):
@@ -55,6 +56,26 @@ class PackageArchitectureTest(unittest.TestCase):
         path.write_text('comando sem atribuicao\n', encoding='utf-8')
         with self.assertRaises(domain.ConfigError):
             adapters.read_dotenv(path)
+
+    def test_classification_message_uses_dedicated_template(self):
+        message_dir = self.root / 'entradas'
+        message_dir.mkdir()
+        (message_dir / 'MENSAGEM_CLASSIFICACAO.txt').write_text(
+            'Mensagem operacional.',
+            encoding='utf-8',
+        )
+        package = self.root / 'pacote'
+        package.mkdir()
+        (package / 'manifesto.json').write_text(
+            '{"pacote_sha256": "' + ('a' * 64) + '"}',
+            encoding='utf-8',
+        )
+
+        with patch.object(cli, 'ROOT', self.root):
+            message = cli.classification_message(package)
+
+        self.assertTrue(message.startswith('Mensagem operacional.'))
+        self.assertIn('a' * 64, message)
 
 
 if __name__ == '__main__':

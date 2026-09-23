@@ -65,6 +65,7 @@ entradas/*.webm
 /CTA_Video_modelo.txt
 /InicioJuliaCTA.txt
 /proposta_pov/
+/arquivo_historico/local/
 
 # Arquivos pesados e produções exportadas
 *.zip

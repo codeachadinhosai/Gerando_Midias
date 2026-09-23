@@ -27,6 +27,10 @@ com `plano`, `prompt_imagem` e `prompt_video`.
 O Python nao escolhe fluxo, cena, acao, fala, referencias criativas ou metodo
 tecnico por conta propria. Essas decisoes pertencem ao plano importado.
 
+`entradas/MENSAGEM_CLASSIFICACAO.txt` contem somente a instrucao operacional
+que o orquestrador inclui nos pacotes consolidados. Ela fica separada dos guias
+historicos para que a execucao nao dependa de documentacao arquivada.
+
 ### Pacote Python
 
 O pacote principal fica em `src/pipeline_flow`.

@@ -135,4 +135,4 @@ Se um campo humano mudar depois da criação do pacote, prepare uma nova revisã
 A importação recusa respostas ligadas a valores humanos diferentes.
 
 Para a descrição histórica e exaustiva de cada coluna, consulte o
-[guia detalhado em `entradas/`](../entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
+[guia detalhado no arquivo histórico](../arquivo_historico/guias_legados/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).

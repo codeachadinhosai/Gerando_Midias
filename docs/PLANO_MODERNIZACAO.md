@@ -1,6 +1,6 @@
 # Plano de modernização do Pipeline Flow
 
-Status: Fase 6 em andamento — documentação, diagnóstico seguro e licença MIT concluídos
+Status: Fase 6 em andamento — documentação, diagnóstico, licença e arquivo histórico concluídos
 Última atualização: 2026-09-22
 Documento de referência para continuidade entre contas e sessões do Codex.
 
@@ -403,7 +403,8 @@ Entregáveis concluídos nesta parte:
 - criar os guias de primeiro uso e configuração, mantendo o README curto;
 - consolidar planilha e classificação por IA em documentos próprios;
 - criar diagnóstico seguro de configuração, sem geração nem consumo de créditos;
-- escolher e adicionar a licença MIT ao repositório e ao pacote.
+- escolher e adicionar a licença MIT ao repositório e ao pacote;
+- retirar materiais substituídos da raiz e reuni-los em `arquivo_historico/`.
 
 Entregáveis restantes:
 
@@ -423,9 +424,10 @@ Status: em andamento. O refinamento de acessibilidade, responsividade e
 experiência visual, o roteiro de primeiro uso e os documentos dedicados de
 planilha e classificação por IA e o diagnóstico seguro foram concluídos sem
 alterar os fluxos operacionais. A licença MIT foi escolhida explicitamente pela
-titular e adicionada. Restam os metadados e suporte do repositório, a estratégia
-de dependências, a configuração de CI, o teste de aceitação em clone limpo e a
-auditoria de release.
+titular e adicionada. Materiais v1, guias substituídos e arquivos locais soltos
+foram preservados em `arquivo_historico/`. Restam os metadados e suporte do
+repositório, a estratégia de dependências, a configuração de CI, o teste de
+aceitação em clone limpo e a auditoria de release.
 
 ## 12. Modelo recomendado
 
@@ -467,6 +469,33 @@ Ao terminar uma fase, registrar data, arquivos alterados, decisões, testes,
 pendências e próxima ação.
 
 ## 14. Registro de progresso
+
+### 2026-09-22 - Arquivamento de materiais substituídos
+
+A raiz e a pasta de entradas foram simplificadas sem apagar arquivos:
+
+- `AUTOMACAO_FLOW.md`, `GUIA_INSUMOS_FLOW.md`, `LEIA-ME.md` e a
+  biblioteca `fluxos/` foram movidos para
+  `arquivo_historico/documentacao_v1/`;
+- cinco guias substituídos de `entradas/` foram movidos para
+  `arquivo_historico/guias_legados/`, com links internos preservados;
+- criada `entradas/MENSAGEM_CLASSIFICACAO.txt` como fonte operacional
+  dedicada, removendo a dependência do orquestrador em um guia histórico;
+- modelos, mídias, pacote ZIP, screenshots, `proposta_pov/` e artefatos do
+  Graphify foram movidos para `arquivo_historico/local/`;
+- a área local reúne 159 arquivos, com 22.451.649 bytes, e permanece ignorada
+  pelo Git;
+- `.env`, ambiente virtual, planilha, identidade, preparados, entregas e a
+  referência externa do gflow permaneceram em seus caminhos ativos;
+- nenhuma mídia, revisão, resposta, log ou produção foi apagada.
+
+Verificação: 158 testes e 10 subtestes aprovados; Ruff sem erros `F` nos
+arquivos Python alterados; diagnóstico seguro com pipeline local e Flow
+prontos; ajuda da CLI, 19 documentos com links locais e `git diff --check`
+aprovados. Permanece apenas o aviso conhecido de depreciação do `TestClient`.
+
+Próxima ação: revisar o diff da reorganização e criar commit separado antes de
+retomar a estratégia de dependências e a matriz de Python.
 
 ### 2026-09-22 - Licença MIT da Fase 6
 

@@ -179,4 +179,4 @@ Documentação complementar:
 - [IA e classificação](docs/IA_E_CLASSIFICACAO.md);
 - [fluxo operacional](docs/FLUXO_OPERACIONAL.md);
 - [solução de problemas](docs/SOLUCAO_DE_PROBLEMAS.md);
-- [referência histórica detalhada da planilha](entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).
+- [referência histórica detalhada da planilha](arquivo_historico/guias_legados/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md).

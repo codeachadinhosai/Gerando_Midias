@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
-import re
-import sys
 import shutil
+import subprocess
+import sys
 import zipfile
 from datetime import datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 from pipeline_flow.config import VIDEO_MODELS, load_config
@@ -142,15 +142,10 @@ def supplied_image(row: dict, state: dict) -> Path | None:
 
 
 def classification_message(package: Path) -> str:
-    guide = ROOT / "entradas" / "GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md"
-    text = guide.read_text(encoding="utf-8")
-    match = re.search(r"## Mensagem pronta para colar no novo chat\s*```text\s*(.*?)\s*```", text, re.S)
-    if not match:
-        raise Invalid("Mensagem pronta para classificação ausente no guia.")
-    message = match.group(1).strip()
-    if "Ã" in message:
-        message = message.encode("latin1").decode("utf-8")
-    manifest = read_json(package / "manifesto.json")
+    message_path = ROOT / "entradas" / "MENSAGEM_CLASSIFICACAO.txt"
+    message = message_path.read_text(encoding="utf-8-sig").strip()
+    if not message:
+        raise Invalid("Mensagem pronta para classificacao ausente.")
     manifest = read_json(package / "manifesto.json")
     return message + "\n\nPacote real desta classificação (use exatamente este caminho):\n" + str(package) + "\n\nHash pacote_sha256:\n" + manifest["pacote_sha256"] + "\n\nDepois de salvar a resposta, execute novamente rodar_pipeline.py."
 

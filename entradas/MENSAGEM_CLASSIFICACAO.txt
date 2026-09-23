@@ -1,0 +1,15 @@
+Processe as linhas com classifica=sim de entradas/controle_pipeline_flow.xlsx até exportar os planos e os prompts completos de imagem e vídeo, atualizando a planilha.
+
+Leia entradas/CLASSIFICADOR_UNIVERSAL.txt, CONTRATO_INSUMOS.md e identidade/identidade.txt. Execute python scripts/preparar_insumos.py preparar e use as revisões retornadas em preparados/relatorio_preparacao.json; não escolha uma revisão por uma aba aberta no editor.
+
+Atue como o classificador: leia os manifestos e examine visualmente os anexos reais de cada pacote. Respeite as instruções da planilha, a identidade de Júlia e os papéis das referências. Penteado, roupa, pose e expressão seguem a cena. Não invente dados de produto nem alegue consultar links que não leu.
+
+Se existir resposta_ia.json correspondente ao hash do pacote, revise-a antes de importar. Confira produto, cenário, continuidade, roupa, penteado, ordem dos anexos, duração das falas e coerência entre planos e prompts. Faça a classificação aqui; não me peça para levar o pacote a outra IA. Se não puder examinar uma referência necessária, informe a pendência.
+
+Salve cada resposta em preparados/respostas_ia/ com nome que inclua produção e revisão, preservando respostas anteriores. Para a redação simples de personagem exigida pelo classificador atual, use incluir_bloco_identidade=false em cada objeto de clipe, ao lado de plano, prompt_imagem e prompt_video. A identidade continua sendo consultada e copiada como arquivo de apoio; mantenha as referências faciais/corporais necessárias e as orientações visuais no prompt final.
+
+Valide e importe com python scripts/preparar_insumos.py importar --pacote CAMINHO_REAL_DO_PACOTE --resposta CAMINHO_REAL_DA_RESPOSTA --atualizar-excel. Use os caminhos reais entre aspas.
+
+Confira os arquivos exportados e se a planilha foi atualizada. Não altere aprovação humana nem force atualização de linhas com mídia em andamento ou já gerada. Se houver bloqueio, preserve os ativos e explique exatamente o que falta.
+
+Entregue links diretos para os novos prompts de imagem, as pastas de referências e o resultado da importação. Preserve as revisões anteriores. Não gere imagens ou vídeos, não publique nada e não registre aprovação nesta etapa.

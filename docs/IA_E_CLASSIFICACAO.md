@@ -162,5 +162,5 @@ Depois de uma importação válida, os planos ficam em
 qualquer geração.
 
 Para instruções de uso em chats, consulte também
-[`02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md`](../entradas/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md)
-e [`01_COMO_USAR_EM_OUTRA_IA.md`](../entradas/01_COMO_USAR_EM_OUTRA_IA.md).
+[`02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md`](../arquivo_historico/guias_legados/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md)
+e [`01_COMO_USAR_EM_OUTRA_IA.md`](../arquivo_historico/guias_legados/01_COMO_USAR_EM_OUTRA_IA.md).

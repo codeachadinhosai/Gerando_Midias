@@ -1,7 +1,9 @@
 # Contrato executável de imagem e vídeo — 2.3-insumos
 
 Este complemento especializa o classificador v2 para preparar prompts de imagem e vídeo. Não gera mídia e não chama serviços.
-A fonte criativa canônica é entradas/CLASSIFICADOR_UNIVERSAL.txt. Os arquivos de fluxos/ são a biblioteca v1; não concatenar seus placeholders ao prompt final v2.
+A fonte criativa canônica é entradas/CLASSIFICADOR_UNIVERSAL.txt. Os arquivos
+em arquivo_historico/documentacao_v1/fluxos/ são a biblioteca v1; não
+concatenar seus placeholders ao prompt final v2.
 
 ## Entrada
 Um pacote contém manifesto.json, CLASSIFICADOR_UNIVERSAL.txt, este contrato, identidade.txt quando disponível e anexos/.

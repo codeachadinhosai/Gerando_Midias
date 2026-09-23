@@ -125,8 +125,8 @@ misture arquivos de pacotes diferentes.
 Siga o guia [IA e classificação](IA_E_CLASSIFICACAO.md). Ele descreve o pacote,
 as responsabilidades da IA, o contrato atual e a importação. Os roteiros
 históricos para
-[um novo chat](../entradas/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md) e
-[outra IA](../entradas/01_COMO_USAR_EM_OUTRA_IA.md) permanecem disponíveis para
+[um novo chat](../arquivo_historico/guias_legados/02_COMO_PROCESSAR_AQUI_EM_NOVO_CHAT.md) e
+[outra IA](../arquivo_historico/guias_legados/01_COMO_USAR_EM_OUTRA_IA.md) permanecem disponíveis para
 consulta detalhada.
 
 A classificação deve produzir JSON puro, preservar `pacote_sha256` e não gerar

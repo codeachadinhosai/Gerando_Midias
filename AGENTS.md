@@ -6,8 +6,8 @@ aprovação, carrossel e entrega de mídias produzidas com o Flow.
 Antes de alterar o projeto, leia:
 
 1. `docs/PLANO_MODERNIZACAO.md`;
-2. `entradas/ARQUITETURA_FLUXO_PIPELINE_FLOW.md`;
-3. `entradas/GUIA_PREENCHIMENTO_CONTROLE_PIPELINE_FLOW.md`;
+2. `docs/ARQUITETURA.md`;
+3. `docs/PLANILHA.md` e `docs/IA_E_CLASSIFICACAO.md`;
 4. `CONTRATO_INSUMOS.md`.
 
 ## Regras de preservação

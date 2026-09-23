@@ -4,5 +4,5 @@ CLASSIFICADOR_UNIVERSAL.txt desta pasta é o contrato v2 canônico.
 Use python scripts/preparar_insumos.py preparar na raiz prompts.
 Os pacotes para a IA ficam em preparados/pacotes/.
 Depois de importar resposta_ia.json, os insumos para colar/anexar no Flow ficam em preparados/flow/.
-Consulte ../GUIA_INSUMOS_FLOW.md e ../CONTRATO_INSUMOS.md.
+Consulte ../documentacao_v1/GUIA_INSUMOS_FLOW.md e ../../CONTRATO_INSUMOS.md.
 O classificador entrega ambos os prompts quando aplicáveis. A aprovação humana da imagem continua sendo requisito antes do vídeo. Nenhuma imagem ou vídeo é gerado por esta etapa.
