@@ -6,6 +6,10 @@ e aprovar imagens, gerar carrosséis e liberar vídeos no Flow.
 O projeto está em modernização incremental. O pacote `pipeline_flow`, os
 scripts compatíveis e o painel web local compartilham os mesmos serviços.
 
+Por padrão, todo vídeo novo inclui fala da Julia. Na planilha, deixe
+`fala_audio` vazia para a IA criar o texto, informe uma fala para preservá-la
+literalmente ou use `sem_audio` para gerar sem fala.
+
 ## Regras de segurança
 
 - nunca gerar vídeo sem `aprovacao=aprovada`;

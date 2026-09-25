@@ -470,6 +470,42 @@ pendências e próxima ação.
 
 ## 14. Registro de progresso
 
+### 2026-09-24 - Assistente local de situações e comandos
+
+O painel recebeu uma nona aba, **Assistente**, para reduzir a necessidade de
+montar manualmente caminhos, revisões e IDs no PowerShell:
+
+- oferece o comando cotidiano do pipeline e as tarefas pontuais de consulta,
+  imagem, registro de imagem própria, aprovação, carrossel e vídeo;
+- usa somente produções e clipes ativos já carregados pelo modo de consulta;
+- inclui o modelo obrigatório `omni-flash` nos comandos de vídeo;
+- separa operações locais das que podem consumir créditos;
+- aceita nome/caminho de imagem e uma observação que aparece apenas nas
+  instruções;
+- gera texto copiável, sem endpoint novo, execução automática, alteração de
+  estado ou chamada ao Flow.
+
+Verificação: 167 testes aprovados; 39 testes web aprovados isoladamente;
+`node --check` e Ruff no teste alterado aprovados. O Playwright carregou 15
+produções locais, montou os comandos de registro de imagem e vídeo sem erros de
+JavaScript e confirmou ausência de rolagem horizontal em 1440 x 1000 e
+390 x 844. Nenhum comando montado foi executado e nenhum crédito foi consumido.
+
+### 2026-09-23 - Primeiro uso até a entrega
+
+O guia `docs/PRIMEIRO_USO.md` passou a cobrir também o percurso posterior ao
+checkpoint sem custo:
+
+- simulação e geração confirmada de imagem por revisão e clipe;
+- revisão humana, decisão na planilha e vínculo técnico da aprovação;
+- carrossel local opcional, independente da autorização de vídeo;
+- consulta de pré-condições e geração de vídeo somente com `omni-flash`;
+- localização das entregas e orientação de retomada sem apagar histórico.
+
+Os comandos que podem consumir créditos estão identificados imediatamente
+antes da execução. O guia continua separando claramente preparação,
+classificação, aprovação, carrossel e geração.
+
 ### 2026-09-23 - Sincronização segura da planilha operacional
 
 A planilha operacional e o modelo versionado foram alinhados ao contrato atual:
@@ -1544,6 +1580,28 @@ conhecido de depreciação interna do `TestClient`. As alterações das Fases 3,
 
 Próxima ação: consolidar a documentação final e a solução de problemas da
 Fase 6 sob novo gate `low`.
+
+### 2026-09-23 — Voz da Julia por padrão no contrato 2.4
+
+O contrato de novos pacotes passou para `2.4-insumos`, mantendo a importação de
+pacotes `2.1`, `2.2` e `2.3` sob suas regras originais:
+
+- todo vídeo novo inclui fala da Julia, salvo quando a pessoa registrar
+  `fala_audio=sem_audio`;
+- `fala_audio` vazia autoriza a IA a criar a fala, enquanto um texto informado
+  deve ser preservado literalmente;
+- abertura mantém `Bora...` em 0s; principal e CTA falam sem iniciar com o
+  bordão; em POV, Julia fala atrás da câmera;
+- `fala_audio` tornou-se campo humano e a importação 2.4 não o sobrescreve com
+  o texto criado pela IA, evitando revisões artificiais;
+- classificador, contrato, guias, planilha-modelo e validação automatizada foram
+  alinhados à mesma regra.
+
+Verificação: 167 testes e 10 subtestes aprovados, incluindo fala padrão,
+silêncio explícito, texto literal, preservação do campo humano e compatibilidade
+legada; Ruff `F`, `I` e `UP` aprovado nos arquivos alterados; modelo sem linhas
+operacionais e planilha local com 35 linhas preservadas. Nenhuma mídia foi
+gerada e nenhum crédito foi consumido.
 
 Nenhuma fase deve ser marcada como concluída sem testes e sem atualização deste
 registro.

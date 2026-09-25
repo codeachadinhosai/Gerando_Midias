@@ -972,15 +972,19 @@ CTA
 - não inventar urgência;
 - não inventar envio automático.
 
-Se o usuário pedir clipe principal sem fala:
+Para todo vídeo novo no contrato 2.4-insumos, a voz da Julia é o padrão:
 
-    "audio": {
-      "ativo": false,
-      "fala_exata": ""
-    }
+- `fala_audio` vazio: criar uma fala natural da Julia para o papel do clipe;
+- `fala_audio` com texto: preservar esse texto literalmente em `fala_exata` e
+  no prompt de vídeo;
+- `fala_audio=sem_audio`: usar `audio.ativo=false` e `fala_exata=""`;
+- sem `sem_audio`, nenhum clipe novo pode ficar com áudio inativo;
+- em POV, Julia fala atrás da câmera, sem exigir que seu rosto apareça;
+- abertura começa literalmente com "Bora..." em 0s;
+- principal e CTA têm fala, mas não começam com "Bora...".
 
-Abertura e CTA dependem de fala neste catálogo, salvo se forem materiais
-existentes reutilizados que já cumpram a função.
+Materiais existentes reutilizados sem nova geração de vídeo conservam o áudio
+que já possuem e não recebem fala inventada.
 
 ------------------------------------------------------------------------
 
@@ -1734,7 +1738,7 @@ Não regenerar o que já pode ser reutilizado.
 Planejar primeiro a produção inteira; depois resolver cada clipe.
 
 
-INTEGRAÇÃO LOCAL — CONTRATO 2.2-insumos
+INTEGRAÇÃO LOCAL — CONTRATOS 2.2 A 2.4-insumos
 Ao receber manifesto.json e CONTRATO_INSUMOS.md, entregar uma resposta_ia.json única com plano_producao e clipes. Cada clipe contém plano, prompt_imagem e prompt_video, com null quando não aplicável. Resolver os dois prompts na mesma classificação; não adiar o prompt de vídeo até a aprovação. A aprovação humana do frame real continua obrigatória quando indicada no plano. O preparador grava os arquivos, sem inventar conteúdo criativo nem executar geração.
 
 
@@ -1750,13 +1754,16 @@ identidade.txt permanece como contexto e arquivo de apoio; manter referências n
 
 ------------------------------------------------------------------------
 
-CONTRATO LOCAL 2.4-insumos — ADENDO DE PRESERVAÇÃO (PREVALECE SOBRE 2.3 EM CONFLITOS)
+CONTRATO LOCAL 2.4-insumos — PRESERVAÇÃO E ÁUDIO PADRÃO (PREVALECE SOBRE 2.3 EM CONFLITOS)
 
 A regra 2.3 permanece válida: origem_clipe.modo=adaptar,
 pipeline.metodo_imagem=i2i e incluir_bloco_identidade=false quando há nova
 imagem; exige base real, preservar/alterar e frase inicial literal. O adendo
 2.4 acrescenta papel operacional PRIMARY_EDITING_BASE, modalidade, contrato
-de regiões, recursos verificados e validação. Não altera campos humanos.
+de regiões, recursos verificados e validação. Também torna `fala_audio` uma
+decisão humana: vazio cria fala da Julia, texto é literal e `sem_audio`
+desativa a fala. Todo vídeo novo sem `sem_audio` deve ter a voz da Julia; em
+POV, ela fala atrás da câmera.
 A Referência 1 é a base de CADA etapa; etapas subsequentes só usam arquivo
 intermediário depois que realmente existir. Nenhuma foto-base deve ser
 rotulada inspiração NO PROMPT, ainda que o tipo humano continue armazenado.

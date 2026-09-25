@@ -1,8 +1,8 @@
-﻿import copy
-import tempfile
+﻿import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+
 from pipeline_flow.services.preparar_insumos import (
     HEADERS,
     Invalid,
@@ -256,6 +256,10 @@ class PromptsTest(unittest.TestCase):
                 p['edicao_imagem'] = {'base_ref_id': p['referencias'][0]['ref_id'], 'preservar': ['Cenário e objetos'], 'alterar': ['Expandir bordas para 9:16']}
                 e['prompt_imagem'] = 'Edite a Referência 1 como imagem-base. Não recrie a cena do zero. ' + e['prompt_imagem']
 
+    def audio_contract(self):
+        self.editing_contract()
+        self.manifest['versao'] = '2.4-insumos'
+
     def test_editing_contract_accepts_explicit_base(self):
         self.editing_contract()
         self.validate()
@@ -279,6 +283,76 @@ class PromptsTest(unittest.TestCase):
         self.editing_contract()
         self.entry['plano']['edicao_imagem']['alterar'] = []
         with self.assertRaises(Invalid): self.validate()
+
+    def test_audio_contract_requires_julia_speech_by_default(self):
+        self.audio_contract()
+        self.entry['plano']['audio']['ativo'] = False
+        self.entry['plano']['audio']['fala_exata'] = ''
+        self.entry['prompt_video'] = 'Vídeo 9:16, 8 segundos, sem fala.'
+        with self.assertRaisesRegex(Invalid, 'exige fala da Julia'):
+            self.validate()
+
+    def test_audio_contract_accepts_explicit_silence(self):
+        self.audio_contract()
+        self.manifest['clipes'][0]['entrada']['fala_audio'] = 'sem_audio'
+        self.entry['plano']['audio']['ativo'] = False
+        self.entry['plano']['audio']['fala_exata'] = ''
+        self.entry['prompt_video'] = 'Vídeo 9:16, 8 segundos, sem fala.'
+        self.validate()
+
+    def test_audio_contract_preserves_human_speech_exactly(self):
+        self.audio_contract()
+        speech = 'A Julia apresenta este produto com naturalidade.'
+        self.manifest['clipes'][0]['entrada']['fala_audio'] = speech
+        with self.assertRaisesRegex(Invalid, 'preservada exatamente'):
+            self.validate()
+        self.entry['plano']['audio']['fala_exata'] = speech
+        self.entry['prompt_video'] = 'Vídeo 9:16, 8 segundos. ' + speech
+        self.validate()
+
+    def test_legacy_editing_contract_allows_silent_principal_clip(self):
+        self.editing_contract()
+        self.entry['plano']['audio']['ativo'] = False
+        self.entry['plano']['audio']['fala_exata'] = ''
+        self.entry['prompt_video'] = 'Vídeo 9:16, 8 segundos, sem fala.'
+        self.validate()
+
+    def test_audio_contract_detects_changed_human_speech(self):
+        self.audio_contract()
+        write_json(self.package / 'manifesto.json', self.manifest)
+        rows = self.current_workbook_rows()
+        rows[0]['fala_audio'] = 'sem_audio'
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            'pipeline_flow.services.preparar_insumos.Workbook'
+        ) as workbook_type:
+            workbook_type.return_value.records.return_value = rows
+            response_file = Path(tmp) / 'resposta.json'
+            write_json(response_file, self.response)
+            with self.assertRaisesRegex(Invalid, 'Campos humanos mudaram'):
+                import_response(tmp, self.package, response_file)
+
+    def test_audio_contract_does_not_overwrite_human_speech(self):
+        self.audio_contract()
+        write_json(self.package / 'manifesto.json', self.manifest)
+        rows = self.current_workbook_rows()
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            'pipeline_flow.services.preparar_insumos.Workbook'
+        ) as workbook_type:
+            workbook = workbook_type.return_value
+            workbook.records.return_value = rows
+            response_file = Path(tmp) / 'resposta.json'
+            write_json(response_file, self.response)
+            import_response(
+                tmp,
+                self.package,
+                response_file,
+                update_excel=True,
+            )
+            updated_fields = {
+                call.args[1]
+                for call in workbook.set.call_args_list
+            }
+            self.assertNotIn('fala_audio', updated_fields)
 
     def test_two_prompts(self):
         self.assertEqual(len(self.validate()), 1)

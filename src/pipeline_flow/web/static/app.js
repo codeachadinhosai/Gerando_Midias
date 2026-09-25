@@ -832,6 +832,270 @@ function populateOperations() {
   if (state.operations.pacote_ia?.url) latest.href = state.operations.pacote_ia.url;
 }
 
+const assistantSingleClipActivities = new Set([
+  'image-register',
+  'approve',
+  'video',
+]);
+
+function powershellQuote(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+function assistantProduction() {
+  const value = document.querySelector('#assistant-production').value;
+  return (state.dashboard?.producoes || [])
+    .find((item) => `${item.id}/${item.revisao}` === value);
+}
+
+function populateAssistantClips() {
+  const activity = document.querySelector('#assistant-activity').value;
+  const production = assistantProduction();
+  const clips = (production?.clipes || [])
+    .filter((clip) => clip.plano_status !== 'pendente')
+    .map((clip) => ({
+      value: clip.id,
+      label: `${clip.id} · ${humanize(clip.proxima_acao)}`,
+    }));
+  const placeholder = assistantSingleClipActivities.has(activity)
+    ? 'Selecionar clipe'
+    : 'Todos os clipes';
+  fillSelect(document.querySelector('#assistant-clip'), placeholder, clips);
+}
+
+function assistantContext() {
+  const activity = document.querySelector('#assistant-activity').value;
+  const production = assistantProduction();
+  const clipId = document.querySelector('#assistant-clip').value;
+  const instruction = document.querySelector('#assistant-instruction').value.trim();
+  const rawImage = document.querySelector('#assistant-image').value.trim();
+  const requiresProduction = activity !== 'pipeline';
+  const requiresClip = assistantSingleClipActivities.has(activity);
+
+  if (requiresProduction && !production) {
+    return { error: 'Selecione uma produção ativa para montar este comando.' };
+  }
+  if (requiresClip && !clipId) {
+    return { error: 'Selecione um clipe específico para esta atividade.' };
+  }
+  if (activity === 'image-register' && !rawImage) {
+    return { error: 'Informe o nome ou caminho da imagem que será registrada.' };
+  }
+
+  let productionSetup = '';
+  let clipSetup = '';
+  let productionArg = '';
+  let clipArg = '';
+  if (production) {
+    const path = production.pasta.replaceAll('/', '\\');
+    const localPath = /^[A-Za-z]:\\/.test(path) ? path : `.\\${path}`;
+    productionSetup = `$Producao = (Resolve-Path ${powershellQuote(localPath)}).Path`;
+    productionArg = ' --producao $Producao';
+  }
+  if (clipId) {
+    clipSetup = `$Clipe = ${powershellQuote(clipId)}`;
+    clipArg = ' --clipe $Clipe';
+  }
+  const prefix = [productionSetup, clipSetup].filter(Boolean);
+  const note = instruction ? `Considere sua observação antes de executar: “${instruction}”` : null;
+  const result = {
+    command: '',
+    cost: 'Sem chamada paga',
+    costTone: 'local',
+    steps: [],
+    summary: '',
+    title: '',
+  };
+
+  if (activity === 'pipeline') {
+    Object.assign(result, {
+      title: 'Continuar todo o pipeline',
+      cost: 'Pode consumir créditos',
+      costTone: 'credit',
+      summary: 'Retoma todas as produções ativas e para quando houver uma decisão humana pendente.',
+      steps: [
+        'Salve e feche a planilha antes de começar.',
+        note,
+        'Execute o comando e leia o resumo final. Imagens e vídeos liberados podem ser enviados ao Flow.',
+        'Se o resumo pedir revisão, abra a imagem no painel, aprove ou rejeite e rode o mesmo comando novamente.',
+      ],
+      command: 'python scripts\\rodar_pipeline.py --modelo-video omni-flash',
+    });
+  } else if (activity === 'status') {
+    Object.assign(result, {
+      title: 'Consultar o estado atual',
+      summary: 'Lista planos e estados sem gerar mídia nem alterar aprovações.',
+      steps: [
+        note,
+        clipId ? 'Confira o estado do clipe selecionado.' : 'Confira o estado de todos os clipes desta produção.',
+        'Use a próxima ação indicada no resultado para decidir o passo seguinte.',
+      ],
+      command: [...prefix, `python scripts\\executar_flow.py listar${productionArg}${clipArg}`].join('\n'),
+    });
+  } else if (activity === 'image-preview' || activity === 'image-generate') {
+    const execute = activity === 'image-generate';
+    Object.assign(result, {
+      title: execute ? 'Gerar imagem no Flow' : 'Simular geração de imagem',
+      cost: execute ? 'Pode consumir créditos' : 'Sem chamada paga',
+      costTone: execute ? 'credit' : 'local',
+      summary: execute
+        ? 'Envia ao Flow apenas as imagens pendentes da seleção.'
+        : 'Mostra o que seria gerado, mas não envia nada ao Flow.',
+      steps: [
+        note,
+        execute
+          ? 'Revise antes o prompt e as referências do clipe.'
+          : 'Leia a simulação e confirme se produção, clipe, prompt e referências estão corretos.',
+        execute
+          ? 'Execute uma única vez e aguarde o relatório final antes de tentar novamente.'
+          : 'Quando estiver tudo correto, escolha “Gerar imagem no Flow” nesta mesma tela.',
+      ],
+      command: [
+        ...prefix,
+        `python scripts\\gerar_imagens.py${productionArg}${clipArg}${execute ? ' --executar' : ''}`,
+      ].join('\n'),
+    });
+  } else if (activity === 'image-register') {
+    let imagePath = rawImage.replaceAll('/', '\\');
+    if (!imagePath.includes('\\')) imagePath = `entradas\\${imagePath}`;
+    if (!/^(?:[A-Za-z]:\\|\.\\)/.test(imagePath)) imagePath = `.\\${imagePath}`;
+    Object.assign(result, {
+      title: 'Usar uma imagem pronta',
+      summary: 'Copia a imagem para a revisão ativa e revoga qualquer aprovação técnica anterior.',
+      steps: [
+        'Confirme que a imagem informada existe e pertence ao clipe selecionado.',
+        note,
+        'Execute o comando. A imagem original não será movida nem alterada.',
+        'Depois abra o novo frame, revise-o e registre uma nova aprovação.',
+      ],
+      command: [
+        ...prefix,
+        `$Imagem = (Resolve-Path ${powershellQuote(imagePath)}).Path`,
+        `python scripts\\executar_flow.py registrar-imagem${productionArg}${clipArg} --arquivo $Imagem`,
+      ].join('\n'),
+    });
+  } else if (activity === 'approve') {
+    Object.assign(result, {
+      title: 'Vincular imagem aprovada',
+      summary: 'Registra tecnicamente a sua decisão humana para o frame atual.',
+      steps: [
+        'Abra o frame e confira produto, anatomia, identidade, cenário e enquadramento.',
+        'Na planilha, escreva “aprovada” na coluna aprovacao, salve e feche o Excel.',
+        note,
+        'Execute o comando. Ele não gera mídia.',
+      ],
+      command: [...prefix, `python scripts\\executar_flow.py aprovar${productionArg}${clipArg}`].join('\n'),
+    });
+  } else if (activity === 'carousel') {
+    Object.assign(result, {
+      title: 'Gerar carrossel',
+      summary: 'Renderiza localmente os cards autorizados pelo plano e preserva versões anteriores.',
+      steps: [
+        note,
+        clipId ? 'Será processado somente o clipe selecionado.' : 'Serão processados os carrosséis ativos da produção.',
+        'Execute o comando e procure o resultado em entregas_flow\\carrossel.',
+      ],
+      command: [...prefix, `python scripts\\gerar_carrossel.py${productionArg}${clipArg}`].join('\n'),
+    });
+  } else if (activity === 'video') {
+    Object.assign(result, {
+      title: 'Gerar vídeo aprovado',
+      cost: 'Pode consumir créditos',
+      costTone: 'credit',
+      summary: 'Gera um vídeo de oito segundos com omni-flash a partir do frame aprovado e vinculado.',
+      steps: [
+        'Confirme que o frame atual está aprovado e que o comando de aprovação já foi concluído.',
+        note,
+        'Execute uma única vez e aguarde a conclusão. Não repita enquanto houver tentativa em andamento.',
+        'Revise o MP4 entregue antes de considerar o clipe concluído.',
+      ],
+      command: [
+        ...prefix,
+        `python scripts\\executar_flow.py video${productionArg}${clipArg} --modelo-video omni-flash`,
+      ].join('\n'),
+    });
+  }
+  result.steps = result.steps.filter(Boolean);
+  return result;
+}
+
+function renderAssistant() {
+  const activity = document.querySelector('#assistant-activity').value;
+  const usesSelection = activity !== 'pipeline';
+  const requiresClip = assistantSingleClipActivities.has(activity);
+  document.querySelector('#assistant-production-field').hidden = !usesSelection;
+  document.querySelector('#assistant-clip-field').hidden = !usesSelection;
+  document.querySelector('#assistant-image-field').hidden = activity !== 'image-register';
+  document.querySelector('#assistant-production').required = usesSelection;
+  document.querySelector('#assistant-clip').required = requiresClip;
+
+  const context = assistantContext();
+  const title = document.querySelector('#assistant-result-title');
+  const summary = document.querySelector('#assistant-summary');
+  const cost = document.querySelector('#assistant-cost');
+  const steps = document.querySelector('#assistant-steps');
+  const code = document.querySelector('#assistant-command code');
+  const copy = document.querySelector('#copy-command');
+  document.querySelector('#copy-status').textContent = '';
+  steps.replaceChildren();
+
+  if (context.error) {
+    title.textContent = 'Complete os campos';
+    summary.textContent = context.error;
+    cost.textContent = 'Aguardando dados';
+    cost.className = 'assistant-cost';
+    code.textContent = '';
+    copy.disabled = true;
+    return;
+  }
+  title.textContent = context.title;
+  summary.textContent = context.summary;
+  cost.textContent = context.cost;
+  cost.className = `assistant-cost is-${context.costTone}`;
+  context.steps.forEach((item) => steps.append(el('li', '', item)));
+  code.textContent = context.command;
+  copy.disabled = false;
+}
+
+function populateAssistant() {
+  const productions = (state.dashboard?.producoes || [])
+    .filter((item) => item.ativa)
+    .map((item) => ({
+      value: `${item.id}/${item.revisao}`,
+      label: `${item.id} · revisão ${item.revisao}`,
+    }));
+  fillSelect(
+    document.querySelector('#assistant-production'),
+    'Selecionar produção',
+    productions,
+  );
+  populateAssistantClips();
+  renderAssistant();
+}
+
+async function copyAssistantCommand() {
+  const command = document.querySelector('#assistant-command code').textContent;
+  if (!command) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(command);
+    } else {
+      const fallback = el('textarea');
+      fallback.value = command;
+      fallback.setAttribute('readonly', '');
+      fallback.className = 'sr-only';
+      document.body.append(fallback);
+      fallback.select();
+      document.execCommand('copy');
+      fallback.remove();
+    }
+    document.querySelector('#copy-status').textContent = 'Comando copiado.';
+    announce('Comando copiado para a área de transferência.');
+  } catch (_error) {
+    document.querySelector('#copy-status').textContent = 'Não foi possível copiar. Selecione o comando acima manualmente.';
+  }
+}
+
 async function postOperation(url, content, contentType = 'application/octet-stream') {
   const response = await fetch(url, {
     method: 'POST',
@@ -1015,6 +1279,7 @@ function renderAll() {
   renderDeliveries();
   renderEvents('#event-list', state.events, 100);
   populateOperations();
+  populateAssistant();
 }
 
 async function getJson(url) {
@@ -1109,6 +1374,18 @@ document.querySelector('#clear-filters').addEventListener('click', () => {
 });
 document.querySelector('#import-package').addEventListener('change', populateResponseOptions);
 document.querySelector('#image-production').addEventListener('change', populateClipOptions);
+document.querySelector('#assistant-activity').addEventListener('change', () => {
+  populateAssistantClips();
+  renderAssistant();
+});
+document.querySelector('#assistant-production').addEventListener('change', () => {
+  populateAssistantClips();
+  renderAssistant();
+});
+document.querySelector('#assistant-clip').addEventListener('change', renderAssistant);
+document.querySelector('#assistant-image').addEventListener('input', renderAssistant);
+document.querySelector('#assistant-instruction').addEventListener('input', renderAssistant);
+document.querySelector('#copy-command').addEventListener('click', copyAssistantCommand);
 
 document.querySelector('#prepare-form').addEventListener('submit', (event) => {
   event.preventDefault();

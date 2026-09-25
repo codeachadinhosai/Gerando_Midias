@@ -60,7 +60,10 @@ DESCRIPTIONS = {
     "video_arquivo": "Caminho do vídeo concluído ou reutilizado.",
     "erro": "Mensagem operacional registrada pelo sistema.",
     "atualizado_em": "Data e hora da última atualização.",
-    "fala_audio": "Fala humana opcional a preservar no planejamento.",
+    "fala_audio": (
+        "Vazio: a IA cria a fala da Julia; texto: preservar exatamente; "
+        "sem_audio: vídeo sem fala."
+    ),
     "gerar_carrossel": "sim autoriza somente o card 9:16.",
     "cta_destino": "Destino autorizado da chamada no card CTA.",
     "cta_palavra": "Palavra-chave do card CTA.",

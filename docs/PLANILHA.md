@@ -77,6 +77,7 @@ para evitar avisos de reparo ao abrir o arquivo no Microsoft Excel.
 | Campo | Como preencher |
 |---|---|
 | `aprovacao` | Depois de revisar a imagem, use `aprovada` ou `rejeitada`. A aprovação é exclusiva para liberar vídeo. |
+| `fala_audio` | Vazio faz a IA criar uma fala da Julia; um texto é preservado exatamente; `sem_audio` solicita vídeo sem fala. |
 | `gerar_carrossel` | `sim` solicita o card; vazio ou `não` não solicita. Essa permissão é independente da aprovação de vídeo. |
 | `cta_destino` | Destino da chamada, somente na linha `cta`. Pode conter opções separadas por `;`. |
 | `cta_palavra` | Palavra de chamada, somente na linha `cta`. Se ficar vazia, a IA pode completar. |
@@ -96,6 +97,8 @@ opções padronizadas. Ainda assim, prefira os valores literais mostrados acima.
 - `gerar_carrossel=sim` autoriza somente o card. Apenas
   `aprovacao=aprovada`, vinculada ao frame e à revisão corretos, libera uma
   nova geração de vídeo.
+- `fala_audio` vazia não significa silêncio: ela autoriza a IA a escrever a
+  fala da Julia. Use somente `sem_audio` para pedir um vídeo sem fala.
 
 ## Exemplo mínimo
 
@@ -110,7 +113,7 @@ ilustrativos.
 
 ## Regra para criar uma nova imagem
 
-O contrato `2.3-insumos` exige edição de uma imagem-base real:
+O contrato `2.4-insumos` exige edição de uma imagem-base real:
 
 1. informe a cena-base em `arquivo`;
 2. quando quiser declarar a base explicitamente, use
@@ -129,7 +132,7 @@ Não edite manualmente:
 - `status`, `classificacao`, `fluxo` e `plano_arquivo`;
 - `imagem_status` e `imagem_arquivo`;
 - `video_status` e `video_arquivo`;
-- `erro`, `atualizado_em` e `fala_audio`;
+- `erro` e `atualizado_em`;
 - `texto_carrossel`, `subtexto_carrossel`, `carrossel_status` e
   `carrossel_arquivo`.
 

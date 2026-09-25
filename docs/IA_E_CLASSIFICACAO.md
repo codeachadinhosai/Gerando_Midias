@@ -86,10 +86,10 @@ O esquema completo está dentro do pacote. A resposta deve:
 - preservar literalmente fatos e decisões humanas.
 
 Não adicione extensões de esquema que o importador atual não reconheça. Pacotes
-novos usam o contrato `2.3-insumos`; respostas legadas `2.1` e `2.2`
+novos usam o contrato `2.4-insumos`; respostas legadas `2.1`, `2.2` e `2.3`
 continuam aceitas quando correspondem ao pacote original.
 
-## 4. Imagem pelo contrato 2.3
+## 4. Imagem pelo contrato 2.4
 
 Quando o plano pedir uma imagem nova, ele deve editar uma base real:
 
@@ -119,8 +119,17 @@ Para vídeo novo, o contrato exige:
 - fala e regras de áudio compatíveis com o papel do clipe;
 - texto falado preservado exatamente no prompt de vídeo.
 
-O clipe de abertura começa com “Bora”. Um clipe principal pode não ter áudio;
-abertura e CTA novos exigem fala conforme o plano validado.
+No contrato `2.4-insumos`, todo vídeo novo tem fala da Julia por padrão:
+
+- `fala_audio` vazia faz a IA criar uma fala natural;
+- um texto em `fala_audio` deve ser preservado exatamente;
+- somente `fala_audio=sem_audio` permite `audio.ativo=false`;
+- a abertura começa com `Bora...` em 0s;
+- principal e CTA falam, mas não começam com `Bora...`;
+- em POV, Julia fala atrás da câmera, mesmo sem aparecer no quadro.
+
+A fala criada pela IA fica no plano e no prompt de vídeo. A importação não
+preenche `fala_audio`, pois essa coluna registra apenas a intenção humana.
 
 ## 6. Carrossel
 

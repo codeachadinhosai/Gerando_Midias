@@ -6,7 +6,8 @@ from dataclasses import replace
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from openpyxl import Workbook as OpenpyxlWorkbook, load_workbook
+from openpyxl import Workbook as OpenpyxlWorkbook
+from openpyxl import load_workbook
 
 from pipeline_flow.config import load_config
 from pipeline_flow.services.preparar_insumos import HEADERS, signature
@@ -175,11 +176,17 @@ class WebReadOnlyTest(unittest.TestCase):
         self.assertIn('/api/operations/executions', script.text)
         self.assertIn('GERAR VIDEO', page.text)
         self.assertIn('GERAR VIDEO', script.text)
+        self.assertIn("id='assistant-tab'", page.text)
+        self.assertIn("id='assistant-command'", page.text)
+        self.assertIn('python scripts\\\\rodar_pipeline.py', script.text)
+        self.assertIn('registrar-imagem', script.text)
+        self.assertIn('--modelo-video omni-flash', script.text)
+        self.assertIn('navigator.clipboard', script.text)
         quote = chr(39)
         self.assertIn('role=' + quote + 'tablist' + quote, page.text)
-        self.assertEqual(page.text.count('role=' + quote + 'tab' + quote), 8)
+        self.assertEqual(page.text.count('role=' + quote + 'tab' + quote), 9)
         self.assertIn('aria-selected=' + quote + 'true' + quote, page.text)
-        self.assertEqual(page.text.count('role=' + quote + 'tabpanel' + quote), 8)
+        self.assertEqual(page.text.count('role=' + quote + 'tabpanel' + quote), 9)
         self.assertIn('aria-busy=' + quote + 'true' + quote, page.text)
         self.assertIn('ArrowRight', script.text)
         self.assertIn('Home', script.text)

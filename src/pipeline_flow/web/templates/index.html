@@ -31,6 +31,7 @@
     <button class='nav-tab' id='videos-tab' type='button' role='tab' data-view='videos' aria-controls='videos' aria-selected='false' tabindex='-1'>Vídeos</button>
     <button class='nav-tab' id='deliveries-tab' type='button' role='tab' data-view='deliveries' aria-controls='deliveries' aria-selected='false' tabindex='-1'>Entregas</button>
     <button class='nav-tab' id='logs-tab' type='button' role='tab' data-view='logs' aria-controls='logs' aria-selected='false' tabindex='-1'>Eventos</button>
+    <button class='nav-tab' id='assistant-tab' type='button' role='tab' data-view='assistant' aria-controls='assistant' aria-selected='false' tabindex='-1'>Assistente</button>
     <button class='nav-tab' id='operations-tab' type='button' role='tab' data-view='operations' aria-controls='operations' aria-selected='false' tabindex='-1'>Operações</button>
   </nav>
 
@@ -186,6 +187,75 @@
         </div>
       </div>
       <div class='event-list' id='event-list'><p class='loading-state'>Carregando eventos…</p></div>
+    </section>
+
+    <section class='view' id='assistant' data-section='assistant' role='tabpanel' aria-labelledby='assistant-tab assistant-title' hidden>
+      <div class='page-heading compact'>
+        <div>
+          <p class='eyebrow'>Ajuda para o terminal</p>
+          <h1 id='assistant-title'>Monte o comando da sua situação</h1>
+          <p class='lede'>Escolha a atividade e os itens reais do painel. O assistente explica a sequência e prepara o PowerShell sem executar nada.</p>
+        </div>
+      </div>
+
+      <div class='notice notice-info' role='note'>
+        O comando é apenas montado para você copiar. Revise os dados e execute no PowerShell aberto na pasta do projeto.
+      </div>
+
+      <div class='assistant-layout'>
+        <form class='assistant-form panel' id='assistant-form'>
+          <h2>O que você precisa fazer?</h2>
+          <label>
+            <span>Atividade</span>
+            <select id='assistant-activity'>
+              <option value='pipeline'>Continuar todo o pipeline</option>
+              <option value='status'>Consultar estado</option>
+              <option value='image-preview'>Simular geração de imagem</option>
+              <option value='image-generate'>Gerar imagem no Flow</option>
+              <option value='image-register'>Usar uma imagem pronta</option>
+              <option value='approve'>Vincular imagem aprovada</option>
+              <option value='carousel'>Gerar carrossel</option>
+              <option value='video'>Gerar vídeo aprovado</option>
+            </select>
+          </label>
+          <label id='assistant-production-field'>
+            <span>Produção ativa</span>
+            <select id='assistant-production'></select>
+          </label>
+          <label id='assistant-clip-field'>
+            <span>Clipe</span>
+            <select id='assistant-clip'></select>
+          </label>
+          <label id='assistant-image-field' hidden>
+            <span>Nome ou caminho da imagem</span>
+            <input id='assistant-image' type='text' placeholder='Papelaria_09.jpg' autocomplete='off'>
+            <small>Se informar apenas o nome, o assistente procurará em <code>entradas</code>.</small>
+          </label>
+          <label>
+            <span>Instrução ou observação (opcional)</span>
+            <textarea id='assistant-instruction' placeholder='Ex.: usar esta imagem sem alterar o produto'></textarea>
+            <small>Esta anotação aparece nos passos, mas não é enviada ao terminal.</small>
+          </label>
+        </form>
+
+        <section class='assistant-result panel' aria-labelledby='assistant-result-title'>
+          <div class='assistant-result-heading'>
+            <div>
+              <p class='eyebrow'>Roteiro pronto</p>
+              <h2 id='assistant-result-title'>Continuar todo o pipeline</h2>
+            </div>
+            <span class='assistant-cost' id='assistant-cost'>Verificando</span>
+          </div>
+          <p id='assistant-summary'></p>
+          <ol class='assistant-steps' id='assistant-steps'></ol>
+          <div class='command-heading'>
+            <h3>Comando PowerShell</h3>
+            <button class='button button-primary' id='copy-command' type='button'>Copiar comando</button>
+          </div>
+          <pre class='command-output' id='assistant-command' tabindex='0'><code></code></pre>
+          <p class='copy-status' id='copy-status' role='status' aria-live='polite'></p>
+        </section>
+      </div>
     </section>
 
     <section class='view' id='operations' data-section='operations' role='tabpanel' aria-labelledby='operations-tab operations-title' hidden>

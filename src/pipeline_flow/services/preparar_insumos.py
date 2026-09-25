@@ -39,7 +39,7 @@ MAIN = NS["m"]
 LEGACY_HEADERS = "classifica arquivo produto_id producao_id ordem papel_na_producao link_produto usar_com tipo_referencia material_existente uso_material instrucao status classificacao fluxo plano_arquivo imagem_status imagem_arquivo aprovacao video_status video_arquivo erro atualizado_em fala_audio".split()
 CAROUSEL_HEADERS = "gerar_carrossel cta_destino cta_palavra texto_carrossel subtexto_carrossel carrossel_status carrossel_arquivo".split()
 HEADERS = LEGACY_HEADERS + CAROUSEL_HEADERS
-HUMAN = HEADERS[:12] + ["aprovacao", "gerar_carrossel", "cta_destino", "cta_palavra"]
+HUMAN = HEADERS[:12] + ["aprovacao", "fala_audio", "gerar_carrossel", "cta_destino", "cta_palavra"]
 FLOW_NAMES = ["abertura_julia", "apresentacao_julia", "pov_pegar", "pov_apresentar", "detalhes_produto", "demonstracao_uso", "lifestyle", "ambientacao", "cta_final"]
 CATEGORIES = ["AberturaJulia", "ApresentacaoJulia", "POVPegar", "POVApresentar", "DetalhesProduto", "DemonstracaoUso", "Lifestyle", "Ambientacao", "CTAFinal"]
 FLOWS = {f"{i:02d}_{name}": cat for i, (name, cat) in enumerate(zip(FLOW_NAMES, CATEGORIES), 1)}
@@ -693,8 +693,9 @@ def resolve_file(name, roots):
     require(p.suffix.lower() in MEDIA_EXT, f"Formato de referência não aceito: {p.name}")
     return p
 
-def human_snapshot(record):
-    return {k: record.get(k, "") for k in HUMAN}
+def human_snapshot(record, *, include_audio=True):
+    fields = HUMAN if include_audio else [field for field in HUMAN if field != "fala_audio"]
+    return {key: record.get(key, "") for key in fields}
 
 def validate_revision_migration(operational):
     image_status = normalize_state('imagem_status', operational.get('imagem_status', ''))
@@ -788,7 +789,7 @@ def prepare(root, sheet, roots, output_dir=None):
                 clean_items = []
                 for i in items:
                     clean_items.append({**i, "referencias": {n: attach(p) for n,p in i["referencias"].items()}})
-                manifest = {"versao": "2.3-insumos", "producao_id": production, "pacote_sha256": rev,
+                manifest = {"versao": "2.4-insumos", "producao_id": production, "pacote_sha256": rev,
                             "planilha": str(sheet.resolve()), "clipes": clean_items, "referencias_globais": global_ids,
                             "inventario": inventory, "contratos": contract_hashes, "identidade_sha256": identity_hash,
                             "dados_produto": [], "avisos": ["Links não consultados automaticamente; não presumir dados dessas páginas."]}
@@ -817,8 +818,8 @@ def validate_response(response, manifest, package):
     require(isinstance(response, dict), "Resposta deve ser objeto JSON.")
     require(response.get("pacote_sha256") == manifest["pacote_sha256"], "Resposta pertence a outra revisão do pacote.")
     require(isinstance(response.get("clipes"), list), "Lista clipes ausente.")
-    require(manifest.get("versao") in {"2.1-insumos", "2.2-insumos", "2.3-insumos"}, "Versão de pacote não suportada.")
-    complete = manifest["versao"] in {"2.2-insumos", "2.3-insumos"}
+    require(manifest.get("versao") in {"2.1-insumos", "2.2-insumos", "2.3-insumos", "2.4-insumos"}, "Versão de pacote não suportada.")
+    complete = manifest["versao"] in {"2.2-insumos", "2.3-insumos", "2.4-insumos"}
     prod = response.get("plano_producao", {})
     require(prod.get("producao_id") == manifest["producao_id"] and prod.get("versao") == "2.0", "Produção/versão divergente.")
     expected = {c["id_clipe"]: c for c in manifest["clipes"]}
@@ -916,7 +917,7 @@ def validate_response(response, manifest, package):
         else:
             require(pipeline.get("metodo_imagem") == "i2i", "Esta primeira etapa exporta i2i; extrair_frame/storyboard devem voltar como pendência.")
             require(bool(refs), "Imagem precisa de referências.")
-            if manifest["versao"] == "2.3-insumos":
+            if manifest["versao"] in {"2.3-insumos", "2.4-insumos"}:
                 require(mode == "adaptar", "Nova imagem exige modo=adaptar.")
                 require(entry.get("incluir_bloco_identidade") is False, "Usar incluir_bloco_identidade=false.")
                 edit = p.get("edicao_imagem")
@@ -958,6 +959,15 @@ def validate_response(response, manifest, package):
             require(type(audio.get("ativo")) is bool, "audio.ativo obrigatório.")
             speech = audio.get("fala_exata", "")
             require(isinstance(speech, str), "Fala deve ser texto.")
+            audio_input = str(source["entrada"].get("fala_audio", "") or "").strip()
+            silence_requested = norm(audio_input) == "sem_audio"
+            if manifest["versao"] == "2.4-insumos":
+                if silence_requested:
+                    require(not audio["ativo"] and not speech, "sem_audio exige áudio inativo e fala vazia.")
+                else:
+                    require(audio["ativo"], "Pacote 2.4 exige fala da Julia; use sem_audio para desativar.")
+                    if audio_input:
+                        require(speech == audio_input, "A fala_audio humana deve ser preservada exatamente.")
             if audio["ativo"]:
                 text_field(speech, "fala_exata")
                 start, end = audio.get("inicio_s"), audio.get("fim_maximo_s")
@@ -967,7 +977,10 @@ def validate_response(response, manifest, package):
                 else:
                     require(not re.match(r"^bora\b", speech, re.I), "Bora somente na abertura.")
             else:
-                require(not speech and role == "principal", "Abertura/CTA novos precisam de fala.")
+                if manifest["versao"] == "2.4-insumos":
+                    require(silence_requested and not speech, "Áudio inativo exige fala_audio=sem_audio.")
+                else:
+                    require(not speech and role == "principal", "Abertura/CTA novos precisam de fala.")
         video_prompt = entry.get("prompt_video")
         if pipeline["gerar_video"] and (complete or video_prompt is not None):
             text_field(video_prompt, "prompt_video")
@@ -1002,10 +1015,12 @@ def import_response(root, package, response_file, update_excel=False, output_dir
         require(digest(package/"identidade.txt") == manifest["identidade_sha256"], "Identidade do pacote alterada.")
     wb = Workbook(manifest["planilha"])
     current = {r["_linha"]: r for r in wb.records()}
+    include_audio = manifest.get("versao") == "2.4-insumos"
     for item in manifest["clipes"]:
         require(
             item["linha"] in current
-            and human_snapshot(current[item["linha"]]) == human_snapshot(item["entrada"]),
+            and human_snapshot(current[item["linha"]], include_audio=include_audio)
+            == human_snapshot(item["entrada"], include_audio=include_audio),
             "Campos humanos mudaram; prepare um novo pacote.",
         )
     response = read_json(response_file)
@@ -1080,8 +1095,9 @@ def import_response(root, package, response_file, update_excel=False, output_dir
             for item in manifest["clipes"]:
                 cid = item["id_clipe"]; p = plans[cid]["plano"]; row = item["linha"]
                 plan_path = dest/cid/"plano_clipe.json"
-                fields = {"plano_arquivo":str(plan_path),"atualizado_em":now(),
-                          "fala_audio":p.get("audio", {}).get("fala_exata", "") if p.get("audio", {}).get("ativo") else ""}
+                fields = {"plano_arquivo":str(plan_path),"atualizado_em":now()}
+                if manifest.get("versao") != "2.4-insumos":
+                    fields["fala_audio"] = p.get("audio", {}).get("fala_exata", "") if p.get("audio", {}).get("ativo") else ""
                 if not same_plan_revision(current[row], plan_path):
                     fields["aprovacao"] = ""
                 carousel = p.get("carrossel") if isinstance(p.get("carrossel"), dict) else {}

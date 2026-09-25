@@ -104,6 +104,8 @@ class SpreadsheetStructureUpdateTest(unittest.TestCase):
             [('bottomLeft', 'A4', 'A4')],
         )
         self.assertEqual(control.auto_filter.ref, 'A1:AE500')
+        self.assertEqual(control['X2'].value, 'VOCÊ')
+        self.assertIn('sem_audio', control['X3'].value)
         self.assertEqual(control['Z2'].value, OWNERS['cta_destino'])
         self.assertEqual(control['AA2'].value, OWNERS['cta_palavra'])
 

@@ -1,4 +1,4 @@
-# Contrato executável de imagem e vídeo — 2.3-insumos
+# Contrato executável de imagem e vídeo — 2.4-insumos
 
 Este complemento especializa o classificador v2 para preparar prompts de imagem e vídeo. Não gera mídia e não chama serviços.
 A fonte criativa canônica é entradas/CLASSIFICADOR_UNIVERSAL.txt. Os arquivos
@@ -33,8 +33,23 @@ Use exatamente id_clipe, producao_id, produto_id e ordem inventariados. Plano pe
 Em cada referencia do plano acrescente ref_id; arquivo deve ser o caminho do anexo no manifesto. tipo deve ser um de base_edicao, produto, inspiracao, detalhe, ambiente, identidade_rosto, identidade_corpo, identidade_mao, material_existente.
 `base_edicao` significa que a imagem existente deve ser editada, não recriada. Quando a planilha marcar o arquivo principal como `base_edicao`, mantenha esse tipo no plano, coloque-o obrigatoriamente como Referência 1 e use seu `ref_id` em `edicao_imagem.base_ref_id`. Preserve tudo que não estiver autorizado em `edicao_imagem.alterar`.
 Prompt final de imagem deve ser específico, independente, 9:16, sem alternativas nem placeholders. Declare claramente o produto, cenário, enquadramento, partes visíveis, estado anterior à ação e o que preservar/ignorar.
-Todas as escolhas ficam no plano. O prompt é a tradução dessas decisões para o gerador. Python copia identidade.txt como apoio e informa a ordem dos anexos; o prompt final 2.3 não recebe o bloco textual como prefixo.
+Todas as escolhas ficam no plano. O prompt é a tradução dessas decisões para o gerador. Python copia identidade.txt como apoio e informa a ordem dos anexos; o prompt final 2.4 não recebe o bloco textual como prefixo.
 Quando gerar_video=true, entregar prompt_video completo na mesma resposta e arquivos_saida.prompt_video="prompt_video.txt". Incluir 9:16, duração de oito segundos, ação, cronograma, câmera, continuidade, estado final, restrições e a fala_exata literalmente quando audio.ativo=true. Quando não houver geração, ambos devem ser null. Clipe pendente não recebe nenhum prompt.
+
+## Áudio padrão da Julia
+
+Para toda nova geração de vídeo no contrato `2.4-insumos`, `fala_audio` é uma
+decisão humana com três comportamentos:
+
+- vazio: criar uma fala natural da Julia e usar `audio.ativo=true`;
+- texto: copiar o conteúdo exatamente para `audio.fala_exata` e para o prompt;
+- `sem_audio`: usar `audio.ativo=false` e `fala_exata` vazia.
+
+Sem `sem_audio`, abertura, principal e CTA devem conter fala da Julia. Abertura
+começa literalmente com `Bora...` em 0s; principal e CTA não começam com
+`Bora...`. Em vídeo POV, a voz continua sendo da Julia, falando atrás da câmera,
+sem obrigar a exibição do rosto. A fala criada pela IA fica no plano e no prompt;
+o importador não a grava em `fala_audio`, preservando a intenção humana original.
 
 ## Carrossel 9:16
 
@@ -72,7 +87,7 @@ Validação estrutural não comprova fidelidade visual nem correspondência perf
 Não existem chamadas pagas, escolha automática de provedor, scraping de links ou geração no Flow nesta entrega.
 
 ## Compatibilidade
-Novos pacotes usam 2.3-insumos e exigem os dois prompts quando aplicáveis. Pacotes 2.1-insumos permanecem importáveis sem prompt de vídeo. Não editar contratos ou manifestos de pacotes antigos; preparar nova revisão para adotar o contrato atual.
+Novos pacotes usam 2.4-insumos e exigem os dois prompts quando aplicáveis. Pacotes 2.1, 2.2 e 2.3-insumos permanecem importáveis sob suas regras originais; 2.1 pode não conter prompt de vídeo. Não editar contratos ou manifestos de pacotes antigos; preparar nova revisão para adotar o contrato atual.
 
 
 ## Edição obrigatória
@@ -87,4 +102,4 @@ Preservar tudo que não estiver listado para alteração. Não remover objetos, 
 Sem base adequada, retornar pendente sem prompts. Sem alteração necessária, reutilizar o frame com gerar_imagem=false; reutilização de vídeos prontos também continua permitida.
 identidade.txt permanece como contexto e arquivo de apoio; manter referências necessárias e orientações naturais de personagem no prompt final.
 
-Pacotes históricos 2.1 e 2.2 continuam importáveis sob suas regras. Não editar seus manifestos. A validação estrutural não substitui revisão visual e semântica.
+Pacotes históricos 2.1, 2.2 e 2.3 continuam importáveis sob suas regras. Não editar seus manifestos. A validação estrutural não substitui revisão visual e semântica.
